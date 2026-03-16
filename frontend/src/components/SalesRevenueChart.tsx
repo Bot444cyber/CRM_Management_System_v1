@@ -67,21 +67,21 @@ export default function SalesRevenueChart({ timeSeries, products }: SalesRevenue
                                 </linearGradient>
                             ))}
                         </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                         <XAxis
                             dataKey="date"
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                            tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
                             dy={8}
                         />
                         <YAxis
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                            tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
                             tickFormatter={(v) => `$${v}`}
                         />
-                        <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted) / 0.1)', stroke: 'hsl(var(--border))', strokeWidth: 1, strokeDasharray: '4 4' }} />
+                        <Tooltip content={<CustomTooltip />} cursor={{ fill: 'color-mix(in oklch, var(--muted) 10%, transparent)', stroke: 'var(--border)', strokeWidth: 1, strokeDasharray: '4 4' }} />
                         {productNames.map((name, i) => (
                             <Area
                                 key={name}

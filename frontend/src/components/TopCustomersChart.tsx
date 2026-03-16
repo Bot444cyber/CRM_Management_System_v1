@@ -53,21 +53,21 @@ export default function TopCustomersChart({ data, details, onClick }: TopCustome
         <div className="h-[250px] w-full mt-4">
             <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={data} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                     <XAxis
                         dataKey="date"
                         axisLine={false}
                         tickLine={false}
-                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontWeight: 600 }}
+                        tick={{ fill: 'var(--muted-foreground)', fontSize: 11, fontWeight: 600 }}
                         dy={10}
                     />
                     <YAxis
                         axisLine={false}
                         tickLine={false}
-                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontWeight: 600 }}
+                        tick={{ fill: 'var(--muted-foreground)', fontSize: 11, fontWeight: 600 }}
                         tickFormatter={(value) => `$${value}`}
                     />
-                    <Tooltip cursor={{ fill: 'hsl(var(--muted) / 0.1)' }} content={<CustomTooltip details={details} />} />
+                    <Tooltip cursor={{ fill: 'color-mix(in oklch, var(--muted) 10%, transparent)' }} content={<CustomTooltip details={details} />} />
 
                     {details && details.map((customer, index) => (
                         <Bar

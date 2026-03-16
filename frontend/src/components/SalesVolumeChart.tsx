@@ -99,7 +99,7 @@ export default function SalesVolumeChart({ unitTimeSeries, products, onDayClick 
                         onClick={handleClick}
                         style={{ cursor: onDayClick ? 'pointer' : undefined }}
                     >
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                         <XAxis
                             dataKey="date"
                             axisLine={false}
@@ -109,11 +109,11 @@ export default function SalesVolumeChart({ unitTimeSeries, products, onDayClick 
                         <YAxis
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                            tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
                             allowDecimals={false}
                         />
                         <Tooltip
-                            cursor={{ fill: 'hsl(var(--muted) / 0.1)', radius: 6 }}
+                            cursor={{ fill: 'color-mix(in oklch, var(--muted) 10%, transparent)', radius: 6 }}
                             content={<CustomTooltip />}
                         />
                         {productNames.map((name, i) => (

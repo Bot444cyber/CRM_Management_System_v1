@@ -52,12 +52,12 @@ export default function ProductPriceChart({ products }: ProductPriceChartProps) 
             <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={products} layout="vertical" margin={{ top: 0, right: 50, left: 0, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
                         <XAxis
                             type="number"
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                            tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
                             tickFormatter={(v) => `$${v}`}
                         />
                         <YAxis
@@ -65,21 +65,21 @@ export default function ProductPriceChart({ products }: ProductPriceChartProps) 
                             type="category"
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                            tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
                             width={110}
                             tickFormatter={(v: string) => v.length > 14 ? v.slice(0, 14) + '…' : v}
                         />
                         <Tooltip
-                            cursor={{ fill: 'hsl(var(--muted) / 0.1)' }}
+                            cursor={{ fill: 'color-mix(in oklch, var(--muted) 10%, transparent)' }}
                             content={<CustomTooltip avgPrice={avgPrice} />}
                         />
                         <ReferenceLine
                             x={avgPrice}
-                            stroke="hsl(var(--muted-foreground))"
+                            stroke="var(--muted-foreground)"
                             strokeDasharray="5 3"
                             label={{
                                 value: `Avg $${avgPrice.toFixed(2)}`,
-                                fill: 'hsl(var(--muted-foreground))',
+                                fill: 'var(--muted-foreground)',
                                 fontSize: 10,
                                 position: 'insideTopRight',
                                 dy: -6,

@@ -141,19 +141,19 @@ export default function InventoryStatsChart({ allSubProducts = [], unitTimeSerie
                     data={data}
                     margin={{ top: 20, right: 0, left: -20, bottom: 0 }}
                 >
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                     <XAxis
                         dataKey="date"
                         axisLine={false}
                         tickLine={false}
-                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                        tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
                         dy={10}
                     />
                     <YAxis
                         yAxisId="left"
                         axisLine={false}
                         tickLine={false}
-                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                        tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
                         tickFormatter={formatYAxisStock}
                     />
                     <YAxis
@@ -161,10 +161,10 @@ export default function InventoryStatsChart({ allSubProducts = [], unitTimeSerie
                         orientation="right"
                         axisLine={false}
                         tickLine={false}
-                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                        tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
                         tickFormatter={formatYAxisValue}
                     />
-                    <Tooltip cursor={{ fill: 'hsl(var(--muted) / 0.1)' }} content={<CustomTooltip />} />
+                    <Tooltip cursor={{ fill: 'color-mix(in oklch, var(--muted) 10%, transparent)' }} content={<CustomTooltip />} />
                     <Legend
                         wrapperStyle={{ paddingTop: '20px', fontSize: '12px' }}
                     />
@@ -188,8 +188,8 @@ export default function InventoryStatsChart({ allSubProducts = [], unitTimeSerie
                         name="Total Value ($)"
                         stroke="#10B981"
                         strokeWidth={3}
-                        dot={{ r: 4, fill: '#10B981', strokeWidth: 2, stroke: 'hsl(var(--card))' }}
-                        activeDot={{ r: 6, fill: '#10B981', stroke: 'hsl(var(--background))' }}
+                        dot={{ r: 4, fill: '#10B981', strokeWidth: 2, stroke: 'var(--card)' }}
+                        activeDot={{ r: 6, fill: '#10B981', stroke: 'var(--background)' }}
                     />
                 </ComposedChart>
             </ResponsiveContainer>
