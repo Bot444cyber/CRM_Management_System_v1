@@ -9,4 +9,5 @@ const auth_middleware_1 = require("../middlewares/auth.middleware");
 const router = express_1.default.Router();
 router.get("/", auth_middleware_1.authenticate, analytics_controller_1.getAnalytics);
 router.get("/insights", auth_middleware_1.authenticate, analytics_controller_1.getDashboardInsights);
+router.get("/sales-breakdown", auth_middleware_1.authenticate, analytics_controller_1.getSalesBreakdown);
 exports.default = router;

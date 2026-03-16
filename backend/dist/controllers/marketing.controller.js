@@ -239,12 +239,34 @@ const recordSale = async (req, res) => {
     }
 };
 exports.recordSale = recordSale;
-// GET /api/marketing/sales  — paginated sales history (activity_logs WHERE action_type='RECORD_SALE')
+// GET /api/marketing/sales  — sales history, optional ?date=YYYY-MM-DD filter
 const getSales = async (req, res) => {
     try {
         const userId = requireUser(req, res);
         if (!userId)
             return;
+        const dateFilter = req.query.date?.trim() ?? null;
+        if (dateFilter) {
+            // ── Single-day drill-down (no pagination) ──
+            const rows = await db_1.db
+                .select()
+                .from(schema_1.activityLogs)
+                .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.activityLogs.userId, userId), (0, drizzle_orm_1.eq)(schema_1.activityLogs.actionType, "RECORD_SALE"), (0, drizzle_orm_1.sql) `DATE(${schema_1.activityLogs.createdAt}) = ${dateFilter}`))
+                .orderBy((0, drizzle_orm_1.sql) `${schema_1.activityLogs.createdAt} DESC`);
+            const parsed = rows.map(row => {
+                let details = row.entityDetails;
+                if (typeof details === "string") {
+                    try {
+                        details = JSON.parse(details);
+                    }
+                    catch { }
+                }
+                return { ...row, entityDetails: details };
+            });
+            res.status(200).json({ data: parsed, total: parsed.length, date: dateFilter });
+            return;
+        }
+        // ── Standard paginated list ──
         const { page, limit, offset } = (0, paginationHelper_1.parsePagination)(req.query);
         const [rows, countResult] = await Promise.all([
             db_1.db
