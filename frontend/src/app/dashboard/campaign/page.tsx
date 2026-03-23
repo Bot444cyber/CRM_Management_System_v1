@@ -444,16 +444,24 @@ export default function CampaignPage() {
                                         <Mail size={13} /> Customer Email
                                     </label>
                                     <div className="flex gap-2">
-                                        <div className="relative flex-1">
-                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={15} />
+                                        <div className="relative flex-1 group">
+                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-foreground transition-colors" size={15} />
                                             <input
                                                 type="email"
                                                 value={emailQuery}
                                                 onChange={e => { setEmailQuery(e.target.value); setLookupDone(false); setFoundCustomer(null); setIsNewCustomer(false); }}
                                                 onKeyDown={e => e.key === "Enter" && handleLookup()}
                                                 placeholder="customer@email.com"
-                                                className="w-full pl-9 pr-4 py-2.5 bg-muted/50 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-foreground/30 focus:bg-background transition-all"
+                                                className="w-full pl-9 pr-9 py-2.5 bg-muted/50 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-foreground/30 focus:bg-background transition-all"
                                             />
+                                            {emailQuery && (
+                                                <button
+                                                    onClick={() => { setEmailQuery(''); setLookupDone(false); setFoundCustomer(null); setIsNewCustomer(false); }}
+                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors bg-muted/50 hover:bg-muted rounded-full p-0.5"
+                                                >
+                                                    <XCircle size={14} />
+                                                </button>
+                                            )}
                                         </div>
                                         <button onClick={handleLookup} disabled={!emailQuery.trim() || looking}
                                             className="px-4 py-2.5 bg-foreground text-background rounded-xl text-sm font-bold hover:opacity-90 active:scale-95 transition-all disabled:opacity-40 flex items-center gap-2 shrink-0">

@@ -56,11 +56,30 @@ export default function CustomersPage() {
         setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
     };
 
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+
+    // Debounce search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(search);
+            setPage(1); // Reset to page 1 on new search
+        }, 400);
+        return () => clearTimeout(timer);
+    }, [search]);
+
     const fetchCustomers = useCallback(async () => {
         setLoading(true);
         try {
+            const queryParams = new URLSearchParams({
+                page: String(page),
+                limit: String(LIMIT),
+            });
+            if (debouncedSearch.trim()) {
+                queryParams.append('search', debouncedSearch.trim());
+            }
+
             const res = await apiFetch(
-                `${BACKEND_URL}/api/customers?page=${page}&limit=${LIMIT}`
+                `${BACKEND_URL}/api/customers?${queryParams.toString()}`
             );
             if (res.ok) {
                 const json = await res.json();
@@ -77,13 +96,6 @@ export default function CustomersPage() {
     }, [page]);
 
     useEffect(() => { fetchCustomers(); }, [fetchCustomers]);
-
-    const filtered = customers.filter(c =>
-        search.trim() === '' ||
-        c.name.toLowerCase().includes(search.toLowerCase()) ||
-        c.email.toLowerCase().includes(search.toLowerCase()) ||
-        (c.location ?? '').toLowerCase().includes(search.toLowerCase())
-    );
 
     const handlePageChange = (p: number) => {
         setPage(p);
@@ -167,8 +179,7 @@ export default function CustomersPage() {
                 showToast('Customer deleted', 'success');
                 setDeleteOpen(false);
                 setDeleteTarget(null);
-                // If last item on page, go back
-                if (filtered.length === 1 && page > 1) setPage(p => p - 1);
+                if (customers.length === 1 && page > 1) setPage(p => p - 1);
                 else fetchCustomers();
             } else {
                 const json = await res.json().catch(() => ({}));
@@ -214,16 +225,23 @@ export default function CustomersPage() {
                 </div>
 
                 <div className="flex items-center gap-3 w-full sm:w-auto">
-                    {/* Search */}
-                    <div className="relative flex-1 sm:w-64">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={15} />
+                    <div className="relative flex-1 sm:w-64 group">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-foreground transition-colors" size={15} />
                         <input
                             type="text"
                             value={search}
                             onChange={e => setSearch(e.target.value)}
                             placeholder="Search customers…"
-                            className="pl-9 pr-4 py-2 bg-muted/50 border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-foreground/30 focus:bg-background transition-all w-full"
+                            className="pl-9 pr-9 py-2 bg-muted/50 border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-foreground/30 focus:bg-background transition-all w-full"
                         />
+                        {search && (
+                            <button
+                                onClick={() => setSearch('')}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors bg-muted/50 hover:bg-muted rounded-full p-0.5"
+                            >
+                                <XCircle size={14} />
+                            </button>
+                        )}
                     </div>
 
                     {/* Add button */}
@@ -251,16 +269,23 @@ export default function CustomersPage() {
                     Array.from({ length: LIMIT }).map((_, i) => (
                         <div key={i} className="h-20 rounded-2xl bg-muted/50 animate-pulse" />
                     ))
-                ) : filtered.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-24 border border-border border-dashed rounded-2xl text-muted-foreground">
-                        <Users size={40} className="mb-4 opacity-30" />
-                        <p className="font-bold text-sm uppercase tracking-widest">No customers found</p>
-                        <p className="text-xs text-muted-foreground/50 mt-1">
-                            {search ? 'Try a different search term' : 'Click "Add Customer" to get started'}
+                ) : customers.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-24 border border-border border-dashed rounded-2xl text-muted-foreground bg-muted/10">
+                        <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
+                            <Users size={24} className="opacity-50" />
+                        </div>
+                        <p className="font-bold text-sm uppercase tracking-widest text-foreground/80 mb-1">No customers found</p>
+                        <p className="text-xs text-muted-foreground mt-1 text-center max-w-[250px]">
+                            {search ? 'Try adjusting your search query' : 'You don\'t have any customers yet. Click "Add Customer" to get started.'}
                         </p>
+                        {search && (
+                            <button onClick={() => setSearch('')} className="mt-4 text-xs font-bold text-foreground border border-border px-3 py-1.5 rounded-lg hover:bg-muted transition-colors">
+                                Clear Search
+                            </button>
+                        )}
                     </div>
                 ) : (
-                    filtered.map(c => (
+                    customers.map(c => (
                         <div
                             key={c.id}
                             className="group bg-card border border-border rounded-2xl px-6 py-5 grid grid-cols-1 lg:grid-cols-[2fr_2fr_1fr_1fr_1fr_1fr_80px] gap-4 items-center hover:bg-accent/50 transition-all"

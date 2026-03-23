@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { X, Package, Layers, DollarSign, Box, Plus, AlertCircle } from 'lucide-react';
 import ModalPortal from './ModalPortal';
 import { SubProduct, MainProduct } from '@/context/InventoryContext';
+import WhatsAppPublishModal from './WhatsAppPublishModal';
 
 interface AddMainProductModalProps {
     isOpen: boolean;
@@ -21,6 +22,9 @@ export default function AddMainProductModal({ isOpen, onClose, onSave }: AddMain
     const [error, setError] = useState('');
     const [isSaving, setIsSaving] = useState(false);
 
+    const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
+    const [createdProduct, setCreatedProduct] = useState<any>(null);
+
     if (!isOpen) return null;
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -35,14 +39,26 @@ export default function AddMainProductModal({ isOpen, onClose, onSave }: AddMain
         const filteredSubs = subProducts.filter(sp => sp.name.trim() !== '');
 
         setIsSaving(true);
-        await onSave({
+        const productToSave = {
             name: name.trim(),
             imageUrl: imageUrl.trim() || undefined,
             subProducts: filteredSubs,
-        });
+        };
+
+        setIsSaving(true);
+        await onSave(productToSave);
         setIsSaving(false);
 
-        // Reset
+        setCreatedProduct(productToSave);
+        setShowWhatsAppModal(true);
+
+        // Don't close immediately here; wait for WhatsApp flow
+        // The cleanup will happen when WhatsApp modal closes
+    };
+
+    const handleWhatsAppClose = () => {
+        setShowWhatsAppModal(false);
+        // Reset base form
         setName('');
         setImageUrl('');
         setImageError(false);
@@ -207,6 +223,15 @@ export default function AddMainProductModal({ isOpen, onClose, onSave }: AddMain
                     </div>
                 </div>
             </div>
+
+            {/* Render the WhatsApp Modal on top if triggered */}
+            {showWhatsAppModal && (
+                <WhatsAppPublishModal
+                    isOpen={showWhatsAppModal}
+                    onClose={handleWhatsAppClose}
+                    productDetails={createdProduct}
+                />
+            )}
         </ModalPortal>
     );
 }

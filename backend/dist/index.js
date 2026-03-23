@@ -14,6 +14,7 @@ const notifications_routes_1 = __importDefault(require("./routes/notifications.r
 const marketing_routes_1 = __importDefault(require("./routes/marketing.routes"));
 const settings_routes_1 = __importDefault(require("./routes/settings.routes"));
 const ai_routes_1 = __importDefault(require("./routes/ai.routes"));
+const whatsapp_routes_1 = __importDefault(require("./routes/whatsapp.routes"));
 const db_1 = require("./config/db");
 dotenv_1.default.config();
 const app = (0, express_1.default)();
@@ -29,6 +30,7 @@ app.use("/api/notifications", notifications_routes_1.default);
 app.use("/api/marketing", marketing_routes_1.default);
 app.use("/api/settings", settings_routes_1.default);
 app.use("/api/ai", ai_routes_1.default);
+app.use("/api/whatsapp", whatsapp_routes_1.default);
 app.get("/", (req, res) => {
     res.send("CRM Backend API is running");
 });

@@ -10,6 +10,11 @@ const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 const poolConnection = promise_1.default.createPool({
     uri: process.env.DATABASE_URL,
+    waitForConnections: true,
+    connectionLimit: 5,
+    queueLimit: 0,
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 10000,
 });
 exports.poolConnection = poolConnection;
 exports.db = (0, mysql2_1.drizzle)(poolConnection);

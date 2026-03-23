@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
     Calendar, Download, ChevronDown, Package, Tag, Layers, DollarSign,
     Box, Percent, TrendingUp, Users, ShoppingBag, Mail, MapPin, X,
@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { useInventory } from '@/context/InventoryContext';
 import dynamic from 'next/dynamic';
 import { apiFetch } from '@/lib/apiFetch';
+import { toast } from 'react-hot-toast';
 
 const AnalyticsChart = dynamic(() => import('@/components/AnalyticsChart'), { ssr: false });
 const TopProductsChart = dynamic(() => import('@/components/TopProductsChart'), { ssr: false });
@@ -70,6 +71,118 @@ const Analytics = () => {
     const [selectedInventory, setSelectedInventory] = useState<string>('all');
     const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
     const [salesTab, setSalesTab] = useState<SalesTab>('revenue');
+    const analyticsRef = useRef<HTMLDivElement>(null);
+    const [exporting, setExporting] = useState(false);
+
+    const exportToPDF = async () => {
+        if (!analyticsRef.current) return;
+        setExporting(true);
+        try {
+            // Dynamically import tools
+            const { toJpeg } = await import('html-to-image');
+            const { jsPDF } = await import('jspdf');
+            const autoTable = (await import('jspdf-autotable')).default;
+
+            const pdf = new jsPDF('p', 'pt', 'a4');
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const margin = 40;
+
+            // 1. Report Header
+            pdf.setFontSize(22);
+            pdf.setTextColor(40);
+            pdf.text('Financial & Analytics Report', margin, 50);
+
+            pdf.setFontSize(10);
+            pdf.setTextColor(100);
+            pdf.text(`Generated Date: ${new Date().toLocaleDateString()}`, margin, 70);
+            pdf.text(`Inventory Scope: ${selectedInventory === 'all' ? 'All Inventories' : inventories.find(i => i.id === selectedInventory)?.name || selectedInventory}`, margin, 85);
+            pdf.text('Prepared for: CA, Financial Analysts & Management', margin, 100);
+
+            // 2. Executive Summary KPIs
+            pdf.setFontSize(14);
+            pdf.setTextColor(40);
+            pdf.text('Executive Summary', margin, 140);
+
+            const totalRev = `$${(insights?.totalRevenue || 0).toLocaleString()}`;
+            const totalConv = (insights?.salesConverted || 0).toLocaleString();
+            const totalCust = (insights?.totalCustomers || 0).toLocaleString();
+            const avgSpend = `$${(insights?.averageSpend || 0).toLocaleString()}`;
+
+            autoTable(pdf, {
+                startY: 155,
+                head: [['Total Revenue', 'Conversions', 'Total Customers', 'Avg. Spend']],
+                body: [[totalRev, totalConv, totalCust, avgSpend]],
+                theme: 'grid',
+                headStyles: { fillColor: [41, 128, 185], textColor: 255, fontStyle: 'bold', halign: 'center' },
+                styles: { halign: 'center', fontSize: 11, cellPadding: 8 }
+            });
+
+            // 3. Product Performance Data Table
+            const lastY = (pdf as any).lastAutoTable.finalY || 155;
+            pdf.setFontSize(14);
+            pdf.setTextColor(40);
+            pdf.text('Product Performance Breakdown', margin, lastY + 40);
+
+            if (salesBreakdown?.products && salesBreakdown.products.length > 0) {
+                const tableData = salesBreakdown.products.map(p => [
+                    p.name,
+                    `$${p.totalRevenue.toLocaleString()}`,
+                    p.totalUnits.toLocaleString(),
+                    `$${p.unitPrice.toLocaleString()}`,
+                    `${p.revenueShare.toFixed(1)}%`
+                ]);
+
+                autoTable(pdf, {
+                    startY: lastY + 55,
+                    head: [['Product Name', 'Revenue', 'Volume', 'Avg Unit Price', 'Revenue Share']],
+                    body: tableData,
+                    theme: 'striped',
+                    headStyles: { fillColor: [52, 73, 94], textColor: 255 },
+                    styles: { fontSize: 10, cellPadding: 6 }
+                });
+            } else {
+                pdf.setFontSize(10);
+                pdf.text('No product data available for this period.', margin, lastY + 60);
+            }
+
+            // 4. Appendix: Visual Dashboard Capture
+            pdf.addPage();
+            pdf.setFontSize(14);
+            pdf.text('Appendix: Dashboard Visuals', margin, 50);
+
+            // Generate high-quality JPEG of the visual charts
+            const imgData = await toJpeg(analyticsRef.current, {
+                quality: 0.95,
+                backgroundColor: '#09090b', // standard dark mode
+                pixelRatio: 2,
+                style: { transform: 'scale(1)', transformOrigin: 'top left' },
+                filter: (node) => {
+                    // Optionally hide the top header buttons during capture
+                    if (node.id === 'export-actions') return false;
+                    return true;
+                }
+            });
+
+            const imgProps = new Image();
+            imgProps.src = imgData;
+            await new Promise((resolve) => { imgProps.onload = resolve });
+
+            // Scale image to fit A4 width, maintaining aspect ratio
+            const imgPdfWidth = pageWidth - (margin * 2);
+            const imgPdfHeight = (imgProps.height * imgPdfWidth) / imgProps.width;
+
+            pdf.addImage(imgData, 'JPEG', margin, 70, imgPdfWidth, imgPdfHeight);
+
+            // Save the Professional PDF
+            pdf.save(`Financial_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+            toast.success('Dashboard exported successfully!');
+        } catch (err: any) {
+            console.error('Failed to export PDF:', err);
+            toast.error('Failed to export PDF: ' + (err.message || 'Unknown error'));
+        } finally {
+            setExporting(false);
+        }
+    };
 
     // ── Day detail drill-down ──────────────────────────────────────────────
     const [dayDetail, setDayDetail] = useState<{ date: string; isoDate: string; sales: any[]; loading: boolean } | null>(null);
@@ -272,34 +385,28 @@ const Analytics = () => {
     );
 
     return (
-        <div className="animate-in fade-in duration-500">
+        <div className="animate-in fade-in duration-500" ref={analyticsRef}>
             {/* Header */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-10 gap-4">
                 <div>
                     <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">Analytics Overview</h1>
                     <p className="text-muted-foreground text-sm mt-1">Detailed traffic and sales analysis</p>
                 </div>
-                <div className="flex flex-wrap items-center gap-3">
-                    <div className="relative">
-                        <select
-                            value={selectedInventory}
-                            onChange={(e) => setSelectedInventory(e.target.value)}
-                            className="appearance-none bg-card border border-border rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground transition-colors pl-4 pr-10 py-2 focus:outline-none cursor-pointer"
-                        >
-                            <option value="all">All Inventories</option>
-                            {inventories.map(inv => (
-                                <option key={inv.id} value={inv.id}>{inv.name}</option>
-                            ))}
-                        </select>
-                        <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-                    </div>
+                <div className="flex flex-wrap items-center gap-3" id="export-actions">
                     <button className="flex items-center gap-2 px-4 py-2 bg-muted/50 border border-border rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted transition-colors">
                         <Calendar size={16} />
                         Last 7 Days
                     </button>
-                    <button className="flex items-center gap-2 px-4 py-2 bg-foreground border border-foreground rounded-lg text-sm font-medium text-background hover:opacity-90 transition-colors">
-                        <Download size={16} />
-                        Export Data
+                    <button
+                        onClick={exportToPDF}
+                        disabled={exporting}
+                        className={cn(
+                            "flex items-center gap-2 px-4 py-2 bg-foreground border border-foreground rounded-lg text-sm font-medium text-background hover:opacity-90 transition-colors",
+                            exporting && "opacity-50 cursor-not-allowed"
+                        )}
+                    >
+                        {exporting ? <span className="w-4 h-4 border-2 border-background/30 border-t-background rounded-full animate-spin" /> : <Download size={16} />}
+                        {exporting ? 'Exporting...' : 'Export Data PDF'}
                     </button>
                 </div>
             </div>

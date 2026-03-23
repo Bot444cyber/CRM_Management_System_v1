@@ -31,9 +31,9 @@ export default function SaleDetailsModal({ open, sale, onClose }: SaleDetailsMod
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                 <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={onClose} />
 
-                <div className="relative z-10 w-full max-w-md bg-card border border-border rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                <div className="relative z-10 w-full max-w-md max-h-[90vh] flex flex-col bg-card border border-border rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                     {/* Header */}
-                    <div className="flex items-center justify-between px-6 py-5 border-b border-border bg-muted/30">
+                    <div className="flex items-center justify-between px-6 py-5 border-b border-border bg-muted/30 shrink-0">
                         <h2 className="text-foreground font-bold text-lg tracking-tight">Transaction Details</h2>
                         <button
                             onClick={onClose}
@@ -44,11 +44,7 @@ export default function SaleDetailsModal({ open, sale, onClose }: SaleDetailsMod
                     </div>
 
                     {/* Receipt Body */}
-                    <div className="p-6 md:p-8 bg-muted/10 relative overflow-hidden">
-                        {/* Decorative ticket holes cutouts */}
-                        <div className="absolute top-1/2 -left-4 -translate-y-1/2 w-8 h-8 bg-card rounded-full border border-border/50 shadow-inner z-10 hidden sm:block"></div>
-                        <div className="absolute top-1/2 -right-4 -translate-y-1/2 w-8 h-8 bg-card rounded-full border border-border/50 shadow-inner z-10 hidden sm:block"></div>
-
+                    <div className="p-6 md:p-8 bg-muted/10 relative overflow-y-auto custom-scrollbar flex-1 min-h-0">
                         <div className="text-center mb-8 relative z-20">
                             <div className="w-16 h-16 rounded-full bg-emerald-500/10 border-2 border-emerald-500/20 flex items-center justify-center mx-auto mb-4 shadow-[0_0_30px_rgba(16,185,129,0.1)]">
                                 <CheckCircle2 size={32} className="text-emerald-500" />
@@ -109,11 +105,11 @@ export default function SaleDetailsModal({ open, sale, onClose }: SaleDetailsMod
                     </div>
 
                     {/* Actions */}
-                    <div className="px-6 py-5 bg-muted/30 border-t border-border flex items-center gap-3">
-                        <button onClick={() => window.print()} className="flex-1 px-4 py-2.5 bg-background hover:bg-muted text-foreground border border-border rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2">
+                    <div className="px-6 py-5 bg-muted/30 border-t border-border flex flex-col sm:flex-row items-center gap-3 shrink-0">
+                        <button onClick={() => window.print()} className="w-full sm:flex-1 px-4 py-2.5 bg-background hover:bg-muted text-foreground border border-border rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2">
                             <Printer size={16} /> Print
                         </button>
-                        <button className="flex-1 px-4 py-2.5 bg-foreground text-background hover:opacity-90 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2">
+                        <button className="w-full sm:flex-1 px-4 py-2.5 bg-foreground text-background hover:opacity-90 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2">
                             <Download size={16} /> PDF
                         </button>
                     </div>

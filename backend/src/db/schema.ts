@@ -40,6 +40,8 @@ export const users = mysqlTable("users", {
     isVerified: boolean("is_verified").default(false),
     isTwoFactorEnabled: boolean("is_two_factor_enabled").default(false),
     role: varchar("role", { length: 50 }).default("user"),
+    greenApiInstanceId: varchar("green_api_instance_id", { length: 255 }),
+    greenApiToken: varchar("green_api_token", { length: 255 }),
     createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
     updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`).onUpdateNow(),
 });
@@ -66,7 +68,6 @@ export const inventories = mysqlTable("inventories", {
     name: varchar("name", { length: 255 }).notNull(),
     imageUrl: varchar("image_url", { length: 2048 }),
     mainProducts: json("main_products").$type<MainProduct[]>(),
-    // Legacy columns (kept for backward compat)
     mainProduct: varchar("main_product", { length: 255 }).notNull().default(""),
     mainProductImageUrl: varchar("main_product_image_url", { length: 2048 }),
     subProducts: json("sub_products").$type<SubProduct[]>().notNull().default([]),

@@ -1,7 +1,13 @@
 "use client";
 
 import React, { useState } from 'react';
-import { ShieldAlert, Trash2, AlertTriangle, CheckCircle2, ChevronRight, Settings as SettingsIcon } from 'lucide-react';
+import {
+    User, Lock, Shield, Smartphone, Globe, Bell,
+    Save, CheckCircle2, ChevronRight, Key, Laptop,
+    Image as ImageIcon, RefreshCw, X, AlertCircle, HelpCircle, ExternalLink, QrCode,
+    ShieldAlert, Trash2, AlertTriangle, Settings as SettingsIcon
+} from 'lucide-react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/apiFetch';
 
@@ -11,6 +17,50 @@ export default function SettingsPage() {
     const [showConfirm, setShowConfirm] = useState(false);
     const [confirmText, setConfirmText] = useState("");
     const [error, setError] = useState<string | null>(null);
+
+    const [greenApiInstanceId, setGreenApiInstanceId] = useState("");
+    const [greenApiToken, setGreenApiToken] = useState("");
+    const [isSavingGreenApi, setIsSavingGreenApi] = useState(false);
+    const [greenApiSuccess, setGreenApiSuccess] = useState(false);
+    const [showGreenApiHelp, setShowGreenApiHelp] = useState(false);
+
+    React.useEffect(() => {
+        const fetchGreenAPI = async () => {
+            try {
+                const res = await apiFetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/settings/green-api`, {
+                    method: 'GET',
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    setGreenApiInstanceId(data.greenApiInstanceId || "");
+                    setGreenApiToken(data.greenApiToken || "");
+                }
+            } catch (err) {
+                console.error("Failed to fetch GreenAPI settings:", err);
+            }
+        };
+        fetchGreenAPI();
+    }, []);
+
+    const handleSaveGreenApi = async () => {
+        setIsSavingGreenApi(true);
+        setGreenApiSuccess(false);
+        try {
+            const res = await apiFetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/settings/green-api`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ greenApiInstanceId, greenApiToken })
+            });
+            if (res.ok) {
+                setGreenApiSuccess(true);
+                setTimeout(() => setGreenApiSuccess(false), 3000);
+            }
+        } catch (err) {
+            console.error("Error saving GreenAPI settings:", err);
+        } finally {
+            setIsSavingGreenApi(false);
+        }
+    };
 
     const handleWipeData = async () => {
         if (confirmText !== "DELETE MY DATA") {
@@ -70,6 +120,129 @@ export default function SettingsPage() {
                             <p className="text-xs text-muted-foreground mt-1">Update your login credentials</p>
                         </div>
                         <ChevronRight size={16} className="text-muted-foreground/50" />
+                    </div>
+                </div>
+            </div>
+
+            {/* WhatsApp Integration */}
+            <div className="bg-card border border-border rounded-2xl p-6 md:p-8 mb-8 overflow-hidden relative">
+                {/* Decorative background element */}
+                <div className="absolute top-0 right-0 w-64 h-64 bg-green-500/5 blur-[80px] rounded-full translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+
+                <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+                    <Smartphone size={20} className="text-green-500" />
+                    WhatsApp Integration
+                </h2>
+                <p className="text-sm text-muted-foreground mb-6">
+                    Connect your own WhatsApp account using GreenAPI to send marketing messages directly from your number.
+                </p>
+
+                {/* Setup Guide Toggle */}
+                <button
+                    onClick={() => setShowGreenApiHelp(!showGreenApiHelp)}
+                    className="flex items-center gap-2 text-sm font-bold text-green-600 hover:text-green-500 transition-colors mb-6 bg-green-500/10 hover:bg-green-500/20 px-4 py-2 rounded-xl"
+                >
+                    <HelpCircle size={16} />
+                    {showGreenApiHelp ? "Hide Setup Guide" : "Don't know how to set this up? Click here"}
+                </button>
+
+                {/* Explainer / Setup Guide Section */}
+                {showGreenApiHelp && (
+                    <div className="mb-8 p-6 bg-muted/40 border border-border rounded-2xl animate-in slide-in-from-top-2 fade-in duration-300">
+                        <h3 className="text-sm font-black uppercase tracking-widest text-foreground/80 mb-5">How to get your credentials</h3>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {/* Step 1 */}
+                            <div className="flex flex-col gap-3 relative">
+                                <div className="absolute top-5 left-10 right-0 h-px bg-border hidden md:block" />
+                                <div className="w-10 h-10 rounded-xl bg-background border border-border flex items-center justify-center font-black text-foreground shadow-sm relative z-10 shrink-0">
+                                    1
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-sm text-foreground flex items-center gap-1.5 mb-1">
+                                        <Globe size={14} className="text-green-500" /> Register Option
+                                    </h4>
+                                    <p className="text-xs text-muted-foreground leading-relaxed">
+                                        Go to <a href="https://greenapi.com/en/" target="_blank" rel="noreferrer" className="text-blue-500 hover:underline inline-flex items-center gap-0.5">GreenAPI <ExternalLink size={10} /></a> and sign up for a free developer account or choose a plan.
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Step 2 */}
+                            <div className="flex flex-col gap-3 relative">
+                                <div className="absolute top-5 left-10 right-0 h-px bg-border hidden md:block" />
+                                <div className="w-10 h-10 rounded-xl bg-background border border-border flex items-center justify-center font-black text-foreground shadow-sm relative z-10 shrink-0">
+                                    2
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-sm text-foreground flex items-center gap-1.5 mb-1">
+                                        <QrCode size={14} className="text-green-500" /> Scan QR Code
+                                    </h4>
+                                    <p className="text-xs text-muted-foreground leading-relaxed">
+                                        Create a new instance in their console. Open your WhatsApp app on your phone → Linked Devices → Scan the QR code shown in GreenAPI.
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Step 3 */}
+                            <div className="flex flex-col gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-background border border-border flex items-center justify-center font-black text-foreground shadow-sm relative z-10 shrink-0">
+                                    3
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-sm text-foreground flex items-center gap-1.5 mb-1">
+                                        <Key size={14} className="text-green-500" /> Copy Credentials
+                                    </h4>
+                                    <p className="text-xs text-muted-foreground leading-relaxed">
+                                        Once authorised, navigate to your instance settings. Copy the <strong>Id Instance</strong> and <strong>Api Token Instance</strong> and paste them in the fields below.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-bold text-foreground mb-2">Instance ID</label>
+                            <input
+                                type="text"
+                                value={greenApiInstanceId}
+                                onChange={(e) => setGreenApiInstanceId(e.target.value)}
+                                placeholder="e.g. 7103859942"
+                                className="w-full bg-background border border-border rounded-xl px-4 py-3 text-foreground focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all outline-none"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-foreground mb-2">API Token</label>
+                            <input
+                                type="text"
+                                value={greenApiToken}
+                                onChange={(e) => setGreenApiToken(e.target.value)}
+                                placeholder="e.g. 8917a5b3c4d..."
+                                className="w-full bg-background border border-border rounded-xl px-4 py-3 text-foreground focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all outline-none"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="pt-2">
+                        <button
+                            onClick={handleSaveGreenApi}
+                            disabled={isSavingGreenApi}
+                            className="px-6 py-3 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                            {isSavingGreenApi ? (
+                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            ) : greenApiSuccess ? (
+                                <>
+                                    <CheckCircle2 size={18} />
+                                    Saved successfully
+                                </>
+                            ) : (
+                                "Save Configuration"
+                            )}
+                        </button>
                     </div>
                 </div>
             </div>

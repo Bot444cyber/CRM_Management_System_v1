@@ -9,6 +9,7 @@ import notificationsRoutes from "./routes/notifications.routes";
 import marketingRoutes from "./routes/marketing.routes";
 import settingsRoutes from "./routes/settings.routes";
 import aiRoutes from "./routes/ai.routes";
+import whatsappRoutes from "./routes/whatsapp.routes";
 import { poolConnection } from "./config/db";
 
 dotenv.config();
@@ -28,6 +29,7 @@ app.use("/api/notifications", notificationsRoutes);
 app.use("/api/marketing", marketingRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/whatsapp", whatsappRoutes);
 
 app.get("/", (req: Request, res: Response) => {
     res.send("CRM Backend API is running");

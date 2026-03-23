@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { hashPassword, verifyPassword } from "../utils/hash";
 import { generateTokens, verifyRefreshToken } from "../utils/jwt";
 import { z } from "zod";
-import { sendOTP } from "../services/emailService";
+import EmailService from "../services/email.service";
 import { verificationTokens, oauthAccounts } from "../db/schema";
 import crypto from "crypto";
 import { OAuth2Client } from "google-auth-library";
@@ -51,7 +51,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
             expires,
         });
 
-        await sendOTP(email, otp);
+        await EmailService.sendOTPEmail(email, otp);
 
         res.status(201).json({
             message: "OTP sent successfully. Please verify your email.",
@@ -97,7 +97,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
                 token: otp,
                 expires,
             });
-            await sendOTP(user.email, otp);
+            await EmailService.sendOTPEmail(user.email, otp);
 
             res.status(403).json({
                 error: "Please verify your email",
@@ -123,7 +123,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
             });
 
             // Send Email
-            await sendOTP(user.email, otp);
+            await EmailService.sendOTPEmail(user.email, otp);
 
             res.status(200).json({ message: "2FA required. OTP sent to email.", userId: user.id, isTwoFactorEnabled: true });
             return;
@@ -197,6 +197,8 @@ export const verifyOTP = async (req: Request, res: Response): Promise<void> => {
                 isVerified: true,
                 isTwoFactorEnabled: false,
                 role: "user",
+                greenApiInstanceId: null,
+                greenApiToken: null,
                 createdAt: new Date(),
                 updatedAt: new Date()
             };
@@ -209,6 +211,11 @@ export const verifyOTP = async (req: Request, res: Response): Promise<void> => {
         await db.delete(verificationTokens).where(eq(verificationTokens.id, tokenRecord.id));
 
         const jwtTokens = generateTokens({ userId: user.id, email: user.email, role: user.role });
+
+        // Send Welcome Email if it's a new registration
+        if (password && fullName) {
+            await EmailService.sendWelcomeEmail(email, fullName);
+        }
 
         res.status(200).json({
             message: "Login successful",
@@ -283,6 +290,8 @@ export const googleOAuth = async (req: Request, res: Response): Promise<void> =>
                 isVerified: true,
                 isTwoFactorEnabled: false,
                 role: "user",
+                greenApiInstanceId: null,
+                greenApiToken: null,
                 createdAt: new Date(),
                 updatedAt: new Date()
             };
@@ -299,7 +308,7 @@ export const googleOAuth = async (req: Request, res: Response): Promise<void> =>
                 expires,
             });
 
-            await sendOTP(user.email, otp);
+            await EmailService.sendOTPEmail(user.email, otp);
             res.status(200).json({ message: "2FA required. OTP sent to email.", userId: user.id, isTwoFactorEnabled: true });
             return;
         }
@@ -320,6 +329,11 @@ export const googleOAuth = async (req: Request, res: Response): Promise<void> =>
         }
 
         const jwtTokens = generateTokens({ userId: user.id, email: user.email, role: user.role });
+
+        // Send Welcome Email for new Google users
+        if (!userRecords[0]) {
+            await EmailService.sendWelcomeEmail(email, payload.name || "User");
+        }
 
         res.status(200).json({
             message: "Google login successful",
@@ -351,5 +365,88 @@ export const refreshToken = async (req: Request, res: Response): Promise<void> =
     } catch (error) {
         console.error("Refresh Token Error", error);
         res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+export const forgotPasswordOTP = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { email } = req.body;
+        if (!email) {
+            res.status(400).json({ status: false, message: 'Email is required' });
+            return;
+        }
+
+        const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+        if (!user) {
+            res.status(404).json({ status: false, message: 'User with this email does not exist' });
+            return;
+        }
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const expires = new Date(Date.now() + 5 * 60 * 1000);
+
+        await db.delete(verificationTokens).where(eq(verificationTokens.identifier, email));
+        await db.insert(verificationTokens).values({
+            identifier: email,
+            token: otp,
+            expires,
+        });
+
+        await EmailService.sendForgotPasswordOTPEmail(email, otp);
+        res.json({ status: true, message: 'OTP sent successfully to your email' });
+    } catch (error) {
+        console.error('Forgot Password OTP Error', error);
+        res.status(500).json({ status: false, message: 'Internal server error' });
+    }
+};
+
+export const verifyForgotPasswordOTP = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { email, otp } = req.body;
+        if (!email || !otp) {
+            res.status(400).json({ status: false, message: 'Email and OTP are required' });
+            return;
+        }
+
+        const tokens = await db.select().from(verificationTokens).where(eq(verificationTokens.identifier, email));
+        const tokenRecord = tokens.find(t => t.token === otp);
+
+        if (!tokenRecord || new Date() > tokenRecord.expires) {
+            res.status(400).json({ status: false, message: 'Invalid or expired OTP' });
+            return;
+        }
+
+        res.json({ status: true, message: 'OTP verified successfully' });
+    } catch (error) {
+        console.error('Verify Forgot Password OTP Error', error);
+        res.status(500).json({ status: false, message: 'Internal server error' });
+    }
+};
+
+export const resetPassword = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { email, otp, newPassword } = req.body;
+        if (!email || !otp || !newPassword) {
+            res.status(400).json({ status: false, message: 'All fields are required' });
+            return;
+        }
+
+        const tokens = await db.select().from(verificationTokens).where(eq(verificationTokens.identifier, email));
+        const tokenRecord = tokens.find(t => t.token === otp);
+
+        if (!tokenRecord || new Date() > tokenRecord.expires) {
+            res.status(400).json({ status: false, message: 'Invalid or expired OTP' });
+            return;
+        }
+
+        const hashedPassword = await hashPassword(newPassword);
+        await db.update(users).set({ password: hashedPassword }).where(eq(users.email, email));
+        await db.delete(verificationTokens).where(eq(verificationTokens.id, tokenRecord.id));
+
+        await EmailService.sendPasswordResetSuccessEmail(email);
+        res.json({ status: true, message: 'Password reset successfully' });
+    } catch (error) {
+        console.error('Reset Password Error', error);
+        res.status(500).json({ status: false, message: 'Internal server error' });
     }
 };

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.wipeData = void 0;
+exports.updateGreenAPI = exports.getGreenAPI = exports.wipeData = void 0;
 const db_1 = require("../config/db");
 const schema_1 = require("../db/schema");
 const drizzle_orm_1 = require("drizzle-orm");
@@ -44,3 +44,48 @@ const wipeData = async (req, res) => {
     }
 };
 exports.wipeData = wipeData;
+const getGreenAPI = async (req, res) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) {
+            res.status(401).json({ message: "Unauthorized" });
+            return;
+        }
+        const userRecord = await db_1.db.select({
+            greenApiInstanceId: schema_1.users.greenApiInstanceId,
+            greenApiToken: schema_1.users.greenApiToken
+        }).from(schema_1.users).where((0, drizzle_orm_1.eq)(schema_1.users.id, userId)).limit(1);
+        if (userRecord.length === 0) {
+            res.status(404).json({ message: "User not found" });
+            return;
+        }
+        res.status(200).json(userRecord[0]);
+    }
+    catch (error) {
+        console.error("Error fetching GreenAPI settings:", error);
+        res.status(500).json({ message: "Server error", detail: error instanceof Error ? error.message : "Unknown" });
+    }
+};
+exports.getGreenAPI = getGreenAPI;
+const updateGreenAPI = async (req, res) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) {
+            res.status(401).json({ message: "Unauthorized" });
+            return;
+        }
+        const { greenApiInstanceId, greenApiToken } = req.body;
+        await db_1.db.update(schema_1.users)
+            .set({
+            greenApiInstanceId: greenApiInstanceId || null,
+            greenApiToken: greenApiToken || null
+        })
+            .where((0, drizzle_orm_1.eq)(schema_1.users.id, userId));
+        res.status(200).json({ message: "GreenAPI configuration saved successfully" });
+    }
+    catch (error) {
+        console.error("Error updating GreenAPI settings:", error);
+        res.status(500).json({ message: "Server error", detail: error instanceof Error ? error.message : "Unknown" });
+    }
+};
+exports.updateGreenAPI = updateGreenAPI;

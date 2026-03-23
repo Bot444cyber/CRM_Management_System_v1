@@ -29,16 +29,25 @@ export const getCustomers = async (req: Request, res: Response): Promise<void> =
         if (!userId) return;
 
         const { page, limit, offset } = parsePagination(req.query);
+        const search = req.query.search ? String(req.query.search) : "";
+
+        const conditions = [eq(customers.userId, userId)];
+
+        if (search) {
+            conditions.push(
+                sql`(${customers.name} LIKE ${"%" + search + "%"} OR ${customers.email} LIKE ${"%" + search + "%"} OR ${customers.location} LIKE ${"%" + search + "%"})`
+            );
+        }
 
         const [rows, countResult] = await Promise.all([
             db.select()
                 .from(customers)
-                .where(eq(customers.userId, userId))
+                .where(and(...conditions))
                 .limit(limit)
                 .offset(offset),
             db.select({ count: sql<number>`count(*)` })
                 .from(customers)
-                .where(eq(customers.userId, userId)),
+                .where(and(...conditions)),
         ]);
 
         const total = Number(countResult[0]?.count ?? 0);

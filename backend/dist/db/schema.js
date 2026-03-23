@@ -11,6 +11,8 @@ exports.users = (0, mysql_core_1.mysqlTable)("users", {
     isVerified: (0, mysql_core_1.boolean)("is_verified").default(false),
     isTwoFactorEnabled: (0, mysql_core_1.boolean)("is_two_factor_enabled").default(false),
     role: (0, mysql_core_1.varchar)("role", { length: 50 }).default("user"),
+    greenApiInstanceId: (0, mysql_core_1.varchar)("green_api_instance_id", { length: 255 }),
+    greenApiToken: (0, mysql_core_1.varchar)("green_api_token", { length: 255 }),
     createdAt: (0, mysql_core_1.timestamp)("created_at").default((0, drizzle_orm_1.sql) `CURRENT_TIMESTAMP`),
     updatedAt: (0, mysql_core_1.timestamp)("updated_at").default((0, drizzle_orm_1.sql) `CURRENT_TIMESTAMP`).onUpdateNow(),
 });
@@ -34,7 +36,6 @@ exports.inventories = (0, mysql_core_1.mysqlTable)("inventories", {
     name: (0, mysql_core_1.varchar)("name", { length: 255 }).notNull(),
     imageUrl: (0, mysql_core_1.varchar)("image_url", { length: 2048 }),
     mainProducts: (0, mysql_core_1.json)("main_products").$type(),
-    // Legacy columns (kept for backward compat)
     mainProduct: (0, mysql_core_1.varchar)("main_product", { length: 255 }).notNull().default(""),
     mainProductImageUrl: (0, mysql_core_1.varchar)("main_product_image_url", { length: 2048 }),
     subProducts: (0, mysql_core_1.json)("sub_products").$type().notNull().default([]),

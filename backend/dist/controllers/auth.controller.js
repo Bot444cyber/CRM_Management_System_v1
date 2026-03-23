@@ -1,13 +1,16 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.refreshToken = exports.googleOAuth = exports.enable2FA = exports.verifyOTP = exports.login = exports.register = void 0;
+exports.resetPassword = exports.verifyForgotPasswordOTP = exports.forgotPasswordOTP = exports.refreshToken = exports.googleOAuth = exports.enable2FA = exports.verifyOTP = exports.login = exports.register = void 0;
 const db_1 = require("../config/db");
 const schema_1 = require("../db/schema");
 const drizzle_orm_1 = require("drizzle-orm");
 const hash_1 = require("../utils/hash");
 const jwt_1 = require("../utils/jwt");
 const zod_1 = require("zod");
-const emailService_1 = require("../services/emailService");
+const email_service_1 = __importDefault(require("../services/email.service"));
 const schema_2 = require("../db/schema");
 const google_auth_library_1 = require("google-auth-library");
 const googleClient = new google_auth_library_1.OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -42,7 +45,7 @@ const register = async (req, res) => {
             token: otp,
             expires,
         });
-        await (0, emailService_1.sendOTP)(email, otp);
+        await email_service_1.default.sendOTPEmail(email, otp);
         res.status(201).json({
             message: "OTP sent successfully. Please verify your email.",
             requiresVerification: true
@@ -82,7 +85,7 @@ const login = async (req, res) => {
                 token: otp,
                 expires,
             });
-            await (0, emailService_1.sendOTP)(user.email, otp);
+            await email_service_1.default.sendOTPEmail(user.email, otp);
             res.status(403).json({
                 error: "Please verify your email",
                 requiresVerification: true,
@@ -103,7 +106,7 @@ const login = async (req, res) => {
                 expires,
             });
             // Send Email
-            await (0, emailService_1.sendOTP)(user.email, otp);
+            await email_service_1.default.sendOTPEmail(user.email, otp);
             res.status(200).json({ message: "2FA required. OTP sent to email.", userId: user.id, isTwoFactorEnabled: true });
             return;
         }
@@ -166,6 +169,8 @@ const verifyOTP = async (req, res) => {
                 isVerified: true,
                 isTwoFactorEnabled: false,
                 role: "user",
+                greenApiInstanceId: null,
+                greenApiToken: null,
                 createdAt: new Date(),
                 updatedAt: new Date()
             };
@@ -177,6 +182,10 @@ const verifyOTP = async (req, res) => {
         // Delete token after successful use
         await db_1.db.delete(schema_2.verificationTokens).where((0, drizzle_orm_1.eq)(schema_2.verificationTokens.id, tokenRecord.id));
         const jwtTokens = (0, jwt_1.generateTokens)({ userId: user.id, email: user.email, role: user.role });
+        // Send Welcome Email if it's a new registration
+        if (password && fullName) {
+            await email_service_1.default.sendWelcomeEmail(email, fullName);
+        }
         res.status(200).json({
             message: "Login successful",
             user: { id: user.id, email: user.email, role: user.role },
@@ -243,6 +252,8 @@ const googleOAuth = async (req, res) => {
                 isVerified: true,
                 isTwoFactorEnabled: false,
                 role: "user",
+                greenApiInstanceId: null,
+                greenApiToken: null,
                 createdAt: new Date(),
                 updatedAt: new Date()
             };
@@ -258,7 +269,7 @@ const googleOAuth = async (req, res) => {
                 token: otp,
                 expires,
             });
-            await (0, emailService_1.sendOTP)(user.email, otp);
+            await email_service_1.default.sendOTPEmail(user.email, otp);
             res.status(200).json({ message: "2FA required. OTP sent to email.", userId: user.id, isTwoFactorEnabled: true });
             return;
         }
@@ -276,6 +287,10 @@ const googleOAuth = async (req, res) => {
             });
         }
         const jwtTokens = (0, jwt_1.generateTokens)({ userId: user.id, email: user.email, role: user.role });
+        // Send Welcome Email for new Google users
+        if (!userRecords[0]) {
+            await email_service_1.default.sendWelcomeEmail(email, payload.name || "User");
+        }
         res.status(200).json({
             message: "Google login successful",
             user: { id: user.id, email: user.email, role: user.role },
@@ -309,3 +324,78 @@ const refreshToken = async (req, res) => {
     }
 };
 exports.refreshToken = refreshToken;
+const forgotPasswordOTP = async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) {
+            res.status(400).json({ status: false, message: 'Email is required' });
+            return;
+        }
+        const [user] = await db_1.db.select().from(schema_1.users).where((0, drizzle_orm_1.eq)(schema_1.users.email, email)).limit(1);
+        if (!user) {
+            res.status(404).json({ status: false, message: 'User with this email does not exist' });
+            return;
+        }
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const expires = new Date(Date.now() + 5 * 60 * 1000);
+        await db_1.db.delete(schema_2.verificationTokens).where((0, drizzle_orm_1.eq)(schema_2.verificationTokens.identifier, email));
+        await db_1.db.insert(schema_2.verificationTokens).values({
+            identifier: email,
+            token: otp,
+            expires,
+        });
+        await email_service_1.default.sendForgotPasswordOTPEmail(email, otp);
+        res.json({ status: true, message: 'OTP sent successfully to your email' });
+    }
+    catch (error) {
+        console.error('Forgot Password OTP Error', error);
+        res.status(500).json({ status: false, message: 'Internal server error' });
+    }
+};
+exports.forgotPasswordOTP = forgotPasswordOTP;
+const verifyForgotPasswordOTP = async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+        if (!email || !otp) {
+            res.status(400).json({ status: false, message: 'Email and OTP are required' });
+            return;
+        }
+        const tokens = await db_1.db.select().from(schema_2.verificationTokens).where((0, drizzle_orm_1.eq)(schema_2.verificationTokens.identifier, email));
+        const tokenRecord = tokens.find(t => t.token === otp);
+        if (!tokenRecord || new Date() > tokenRecord.expires) {
+            res.status(400).json({ status: false, message: 'Invalid or expired OTP' });
+            return;
+        }
+        res.json({ status: true, message: 'OTP verified successfully' });
+    }
+    catch (error) {
+        console.error('Verify Forgot Password OTP Error', error);
+        res.status(500).json({ status: false, message: 'Internal server error' });
+    }
+};
+exports.verifyForgotPasswordOTP = verifyForgotPasswordOTP;
+const resetPassword = async (req, res) => {
+    try {
+        const { email, otp, newPassword } = req.body;
+        if (!email || !otp || !newPassword) {
+            res.status(400).json({ status: false, message: 'All fields are required' });
+            return;
+        }
+        const tokens = await db_1.db.select().from(schema_2.verificationTokens).where((0, drizzle_orm_1.eq)(schema_2.verificationTokens.identifier, email));
+        const tokenRecord = tokens.find(t => t.token === otp);
+        if (!tokenRecord || new Date() > tokenRecord.expires) {
+            res.status(400).json({ status: false, message: 'Invalid or expired OTP' });
+            return;
+        }
+        const hashedPassword = await (0, hash_1.hashPassword)(newPassword);
+        await db_1.db.update(schema_1.users).set({ password: hashedPassword }).where((0, drizzle_orm_1.eq)(schema_1.users.email, email));
+        await db_1.db.delete(schema_2.verificationTokens).where((0, drizzle_orm_1.eq)(schema_2.verificationTokens.id, tokenRecord.id));
+        await email_service_1.default.sendPasswordResetSuccessEmail(email);
+        res.json({ status: true, message: 'Password reset successfully' });
+    }
+    catch (error) {
+        console.error('Reset Password Error', error);
+        res.status(500).json({ status: false, message: 'Internal server error' });
+    }
+};
+exports.resetPassword = resetPassword;

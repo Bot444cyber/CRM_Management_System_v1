@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, SlidersHorizontal, Eye, Star, LineChart, Box, Package, Check } from 'lucide-react';
+import { Search, SlidersHorizontal, Eye, Star, LineChart, Box, Package, Check, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import GaugeChart from './GaugeChart';
 import { useInventory } from '@/context/InventoryContext';
+import WhatsAppPublishModal from './WhatsAppPublishModal';
 
 type ColumnKey = 'product' | 'performance' | 'stock' | 'price';
 
@@ -25,6 +26,7 @@ const ProductList = () => {
   const { inventories } = useInventory();
   const [visibleColumns, setVisibleColumns] = useState<ColumnKey[]>(['product', 'performance', 'stock', 'price']);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [whatsappProduct, setWhatsappProduct] = useState<any>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Flatten inventories into a mapped product list
@@ -144,8 +146,17 @@ const ProductList = () => {
                 <div className="w-16 h-16 bg-white/5 rounded-2xl overflow-hidden shrink-0 border border-white/10">
                   <img src={product.image} alt={product.name} className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500" referrerPolicy="no-referrer" />
                 </div>
-                <div className="flex flex-col">
-                  <h3 className="font-bold text-white text-base">{product.name}</h3>
+                <div className="flex flex-col flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="font-bold text-white text-base">{product.name}</h3>
+                    <button
+                      onClick={() => setWhatsappProduct({ name: product.name, imageUrl: product.image, subProducts: [] })}
+                      className="p-1.5 rounded-lg bg-green-500/10 text-green-500 hover:bg-green-500/20 transition-all shadow-[0_0_10px_rgba(34,197,94,0.1)] border border-green-500/20 flex shrink-0"
+                      title="Announce on WhatsApp"
+                    >
+                      <Send size={14} />
+                    </button>
+                  </div>
                   <p className="text-[10px] text-white/40 uppercase tracking-wider mb-1 px-1 py-0.5 bg-white/5 rounded w-max">{product.inventoryName}</p>
                   <div className="flex items-center gap-1 text-white/30 text-xs">
                     <span>Review :</span>
@@ -222,6 +233,14 @@ const ProductList = () => {
           </div>
         ))}
       </div>
+
+      {whatsappProduct && (
+        <WhatsAppPublishModal
+          isOpen={!!whatsappProduct}
+          onClose={() => setWhatsappProduct(null)}
+          productDetails={whatsappProduct}
+        />
+      )}
     </div>
   );
 };

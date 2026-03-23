@@ -1,9 +1,0 @@
-Inventory: Grage
-[{"name":"Cars","subProducts":[{"name":"Car X","price":"5000","stock":2000,"discount":0,"status":"Active","imageUrl":"..."}]}]
----
-Inventory: Test Inventory
-[{"name":"Test Product","subProducts":[{"name":"Default","price":"100","stock":10,"discount":0,"status":"Active"}]},{"name":"Main Second","subProducts":[{"name":"second1","price":"500","stock":10,"discount":0,"status":"Active","imageUrl":""},{"name":"second2","price":"50","stock":0,"discount":0,"status":"Active"}]}]
----
-Inventory: Collections
-"[{\"name\":\"Electronics\",\"subProducts\":[{\"name\":\"Laptops\",\"price\":\"500\",\"stock\":2,\"discount\":0,\"status\":\"Active\",\"imageUrl\":\"\"},{\"name\":\"PC\",\"price\":\"500\",\"stock\":598,\"discount\":0,\"status\":\"Active\"}]}]"
----

@@ -30,15 +30,20 @@ const getCustomers = async (req, res) => {
         if (!userId)
             return;
         const { page, limit, offset } = (0, paginationHelper_1.parsePagination)(req.query);
+        const search = req.query.search ? String(req.query.search) : "";
+        const conditions = [(0, drizzle_orm_1.eq)(schema_1.customers.userId, userId)];
+        if (search) {
+            conditions.push((0, drizzle_orm_1.sql) `(${schema_1.customers.name} LIKE ${"%" + search + "%"} OR ${schema_1.customers.email} LIKE ${"%" + search + "%"} OR ${schema_1.customers.location} LIKE ${"%" + search + "%"})`);
+        }
         const [rows, countResult] = await Promise.all([
             db_1.db.select()
                 .from(schema_1.customers)
-                .where((0, drizzle_orm_1.eq)(schema_1.customers.userId, userId))
+                .where((0, drizzle_orm_1.and)(...conditions))
                 .limit(limit)
                 .offset(offset),
             db_1.db.select({ count: (0, drizzle_orm_1.sql) `count(*)` })
                 .from(schema_1.customers)
-                .where((0, drizzle_orm_1.eq)(schema_1.customers.userId, userId)),
+                .where((0, drizzle_orm_1.and)(...conditions)),
         ]);
         const total = Number(countResult[0]?.count ?? 0);
         res.status(200).json((0, paginationHelper_1.paginatedResponse)(rows, total, page, limit));
