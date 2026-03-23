@@ -168,7 +168,7 @@ export default function ProductsPage() {
                                             break;
 
                                         case 'inventory':
-                                            href = '/products/inventory';
+                                            href = '/dashboard';
                                             break;
                                     }
 
