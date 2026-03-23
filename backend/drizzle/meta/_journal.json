@@ -15,6 +15,13 @@
       "when": 1772387350510,
       "tag": "0001_yellow_junta",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1774272830360,
+      "tag": "0002_broken_meggan",
+      "breakpoints": true
     }
   ]
 }
