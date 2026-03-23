@@ -30,7 +30,7 @@ async function sendEmail(
     const html = getTemplate(templateName, templateData);
 
     const mailOptions = {
-      from: `"Nexus Inventory" | SAAS" <noreply@monkframer.online>`,
+      from: `"Nexus Inventory | SAAS" <noreply@monkframer.online>`,
       to,
       subject,
       text: textFallback,
