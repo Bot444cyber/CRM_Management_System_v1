@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import Pagination from "@/components/Pagination";
 import SaleDetailsModal from "@/components/SaleDetailsModal";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? "";
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

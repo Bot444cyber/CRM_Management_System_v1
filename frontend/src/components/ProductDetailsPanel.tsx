@@ -3,6 +3,7 @@ import { X, Save, Tag, DollarSign, Box, Percent, Wand2, Loader2, Camera as Camer
 import { cn } from '@/lib/utils';
 import ModalPortal from './ModalPortal';
 import CameraScannerModal from './CameraScannerModal';
+import { apiFetch } from '@/lib/apiFetch';
 
 export interface ProductDetails {
     id: string;
@@ -94,9 +95,8 @@ const ProductDetailsPanel = ({ isOpen, onClose, product, onSave }: ProductDetail
                 const mimeType = matches[1];
                 const imageBase64 = matches[2];
 
-                const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'}/api/ai/extract-product`, {
+                const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/ai/extract-product`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ imageBase64, mimeType }),
                 });
 
@@ -127,9 +127,8 @@ const ProductDetailsPanel = ({ isOpen, onClose, product, onSave }: ProductDetail
     const handleCameraCapture = async (imageBase64: string, mimeType: string) => {
         setIsExtracting(true);
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'}/api/ai/extract-product`, {
+            const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/ai/extract-product`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ imageBase64, mimeType }),
             });
 

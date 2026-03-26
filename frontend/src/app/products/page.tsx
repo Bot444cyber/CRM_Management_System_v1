@@ -12,7 +12,8 @@ import {
     UserPlus, CalendarOff, Star, Share2, Truck,
     Megaphone, Mail, Smartphone, Heart, CalendarDays, ClipboardList,
     CheckSquare, Clock, Zap, LifeBuoy, Calendar, CalendarClock,
-    ThumbsUp, Cpu, Phone, BookOpen
+    ThumbsUp, Cpu, Phone, BookOpen,
+    Briefcase
 } from 'lucide-react';
 import Link from 'next/link';
 import Squares from '@/components/Design/Squares';
@@ -53,6 +54,7 @@ const productCategories = [
         name: "Inventory",
         apps: [
             { name: "Inventory", desc: "Manage your stock and logistics", icon: Box, color: "text-orange-500" },
+            { name: "Project Management System", desc: "Manage your projects and tasks", icon: Briefcase, color: "text-orange-500" },
             // { name: "Manufacturing", desc: "Manufacturing Orders & BOMs", icon: Factory, color: "text-slate-400" },
             // { name: "PLM", desc: "Product Lifecycle Management", icon: Wrench, color: "text-blue-500" },
             // { name: "Purchase", desc: "Purchase orders, receipts & vendors", icon: CreditCard, color: "text-emerald-400" },
@@ -169,6 +171,10 @@ export default function ProductsPage() {
 
                                         case 'inventory':
                                             href = '/dashboard';
+                                            break;
+
+                                        case 'project management system':
+                                            href = '/projects';
                                             break;
                                     }
 

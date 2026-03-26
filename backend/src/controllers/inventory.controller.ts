@@ -248,3 +248,36 @@ export const deleteInventory = async (req: Request, res: Response): Promise<void
         res.status(500).json({ message: "Server error" });
     }
 };
+
+export const getInventoryProjects = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id } = req.params;
+        const { projectInventory, projects } = await import("../db/schema");
+
+        // Find all reservations for this inventory ID
+        const links = await db.select().from(projectInventory).where(eq(projectInventory.inventoryId, id as string));
+        if (!links.length) {
+            res.status(200).json([]);
+            return;
+        }
+
+        const result = [];
+        for (const link of links) {
+            // Fetch associated project
+            const prj = await db.select().from(projects).where(eq(projects.id, link.projectId)).limit(1);
+            if (prj.length) {
+                result.push({
+                    ...prj[0],
+                    usedAs: link.subProductName,
+                    reservedQuantity: link.reservedQuantity,
+                    requiredQuantity: link.requiredQuantity
+                });
+            }
+        }
+
+        res.status(200).json(result);
+    } catch (error) {
+        console.error("Error fetching inventory projects:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+};

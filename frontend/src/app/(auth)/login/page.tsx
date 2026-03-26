@@ -25,7 +25,7 @@ function LoginContent() {
 
         try {
             const toastId = toast.loading('Signing in...');
-            const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/login`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, password })
@@ -43,10 +43,11 @@ function LoginContent() {
                 toast.success('Check your email for OTP');
                 setStep('otp');
             } else {
-                localStorage.setItem("accessToken", data.accessToken);
-                localStorage.setItem("refreshToken", data.refreshToken);
+                if (data.accessToken) localStorage.setItem("accessToken", data.accessToken);
+                if (data.refreshToken) localStorage.setItem("refreshToken", data.refreshToken);
                 toast.success('Signed in successfully!', { id: toastId });
                 window.location.href = "/"; // redirect to dashboard
+
             }
         } catch (err: any) {
             toast.error(err.message || 'An error occurred');
@@ -58,7 +59,7 @@ function LoginContent() {
     const handleGoogleSuccess = async (credentialResponse: any) => {
         try {
             const toastId = toast.loading('Signing in with Google...');
-            const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/google`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/google`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ token: credentialResponse.credential })
@@ -74,10 +75,11 @@ function LoginContent() {
                 toast.success('Check your email for OTP');
                 setStep('otp'); // Could happen if user enforced 2FA
             } else {
-                localStorage.setItem("accessToken", data.accessToken);
-                localStorage.setItem("refreshToken", data.refreshToken);
+                if (data.accessToken) localStorage.setItem("accessToken", data.accessToken);
+                if (data.refreshToken) localStorage.setItem("refreshToken", data.refreshToken);
                 toast.success('Signed in successfully!', { id: toastId });
                 window.location.href = "/";
+
             }
         } catch (err: any) {
             toast.error(err.message || 'An error occurred with Google login');
@@ -109,7 +111,7 @@ function LoginContent() {
         try {
             const otpString = otp.join('');
             const toastId = toast.loading('Verifying OTP...');
-            const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/verify-otp`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/verify-otp`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, otp: otpString })
@@ -121,8 +123,8 @@ function LoginContent() {
                 return;
             }
 
-            localStorage.setItem("accessToken", data.accessToken);
-            localStorage.setItem("refreshToken", data.refreshToken);
+            if (data.accessToken) localStorage.setItem("accessToken", data.accessToken);
+            if (data.refreshToken) localStorage.setItem("refreshToken", data.refreshToken);
             toast.success('OTP Verified. Signed in successfully!', { id: toastId });
             window.location.href = "/";
         } catch (err: any) {

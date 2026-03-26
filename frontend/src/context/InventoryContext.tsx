@@ -58,7 +58,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
     const fetchInventories = async (pageNum = 1) => {
         try {
             const res = await apiFetch(
-                `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/inventories?page=${pageNum}&limit=${ITEMS_PER_PAGE}`
+                `${process.env.NEXT_PUBLIC_API_URL}/api/inventories?page=${pageNum}&limit=${ITEMS_PER_PAGE}`
             );
             if (res.ok) {
                 const json = await res.json();
@@ -119,7 +119,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
         }
 
         try {
-            const res = await apiFetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/inventories`, {
+            const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/inventories`, {
                 method: 'POST',
                 body: JSON.stringify(newInventory)
             });
@@ -140,7 +140,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
 
     const updateInventory = async (id: string, data: Partial<Inventory>) => {
         try {
-            const res = await apiFetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/inventories/${id}`, {
+            const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/inventories/${id}`, {
                 method: 'PUT',
                 body: JSON.stringify(data)
             });
@@ -161,7 +161,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
 
     const removeInventory = async (id: string) => {
         try {
-            const res = await apiFetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/inventories/${id}`, {
+            const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/inventories/${id}`, {
                 method: 'DELETE'
             });
 

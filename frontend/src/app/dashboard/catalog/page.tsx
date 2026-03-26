@@ -63,7 +63,7 @@ export default function AllProductsPage() {
         });
 
         try {
-            const res = await apiFetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/settings/green-api`, { method: 'GET' });
+            const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/settings/green-api`, { method: 'GET' });
             if (res.ok) {
                 const data = await res.json();
                 if (data.greenApiInstanceId && data.greenApiToken) {

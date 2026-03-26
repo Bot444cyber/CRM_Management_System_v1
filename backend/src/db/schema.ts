@@ -115,3 +115,115 @@ export const activityLogs = mysqlTable("activity_logs", {
     entityDetails: json("entity_details"),
     createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
+
+export const workspaces = mysqlTable("workspaces", {
+    id: varchar("id", { length: 255 }).primaryKey(),
+    userId: int("user_id").notNull(), // Original creator
+    name: varchar("name", { length: 255 }).notNull(),
+    description: text("description"),
+    passKey: varchar("pass_key", { length: 10 }).unique(),
+    createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const workspaceMembers = mysqlTable("workspace_members", {
+    id: varchar("id", { length: 255 }).primaryKey(),
+    workspaceId: varchar("workspace_id", { length: 255 }).notNull(),
+    userId: int("user_id").notNull(),
+    role: varchar("role", { length: 50 }).notNull().default("member"), // owner | manager | member
+    joinedAt: timestamp("joined_at").default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const projects = mysqlTable("projects", {
+    id: varchar("id", { length: 255 }).primaryKey(),
+    workspaceId: varchar("workspace_id", { length: 255 }).notNull(),
+    name: varchar("name", { length: 255 }).notNull(),
+    description: text("description"),
+    status: varchar("status", { length: 50 }).default("Active"), // Active, Completed, At Risk
+    deadline: timestamp("deadline"),
+    createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const projectInventory = mysqlTable("project_inventory", {
+    id: varchar("id", { length: 255 }).primaryKey(),
+    projectId: varchar("project_id", { length: 255 }).notNull(),
+    inventoryId: varchar("inventory_id", { length: 255 }).notNull(),
+    subProductName: varchar("sub_product_name", { length: 255 }).notNull(),
+    requiredQuantity: int("required_quantity").notNull().default(1),
+    reservedQuantity: int("reserved_quantity").notNull().default(0),
+    createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const projectMilestones = mysqlTable("project_milestones", {
+    id: varchar("id", { length: 255 }).primaryKey(),
+    projectId: varchar("project_id", { length: 255 }).notNull(),
+    name: varchar("name", { length: 255 }).notNull(),
+    description: text("description"),
+    status: varchar("status", { length: 50 }).default("Pending"), // Pending, In Progress, Completed
+    dueDate: timestamp("due_date"),
+    progress: int("progress").default(0), // 0 to 100
+    createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const resourceRequests = mysqlTable("resource_requests", {
+    id: varchar("id", { length: 255 }).primaryKey(),
+    projectId: varchar("project_id", { length: 255 }).notNull(),
+    inventoryId: varchar("inventory_id", { length: 255 }).notNull(),
+    subProductName: varchar("sub_product_name", { length: 255 }).notNull(),
+    requestedQuantity: int("requested_quantity").notNull().default(1),
+    requestedByUserId: int("requested_by_user_id").notNull(),
+    status: varchar("status", { length: 50 }).default("Pending"), // Pending, Approved, Denied
+    pulseEventId: varchar("pulse_event_id", { length: 255 }),
+    createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+    processedAt: timestamp("processed_at"),
+});
+
+// PMS Roles: admin | manager | team_leader | developer | designer | customer | user
+export const projectMembers = mysqlTable("project_members", {
+    id: varchar("id", { length: 255 }).primaryKey(),
+    projectId: varchar("project_id", { length: 255 }).notNull(),
+    userId: int("user_id").notNull(),
+    role: varchar("role", { length: 50 }).notNull().default("developer"), // admin | manager | team_leader | developer | designer | customer | user
+    joinedAt: timestamp("joined_at").default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const projectInvitations = mysqlTable("project_invitations", {
+    id: varchar("id", { length: 255 }).primaryKey(),
+    projectId: varchar("project_id", { length: 255 }).notNull(),
+    code: varchar("code", { length: 10 }).notNull().unique(),
+    linkToken: varchar("link_token", { length: 255 }).notNull().unique(),
+    methods: json("methods").$type<string[]>().default(["code", "link", "approval"]), // Supported join methods
+    isActive: boolean("is_active").default(true),
+    createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`).onUpdateNow(),
+});
+
+export const projectJoinRequests = mysqlTable("project_join_requests", {
+    id: varchar("id", { length: 255 }).primaryKey(),
+    projectId: varchar("project_id", { length: 255 }).notNull(),
+    userId: int("user_id").notNull(),
+    status: varchar("status", { length: 50 }).default("Pending"), // Pending, Approved, Rejected
+    message: text("message"),
+    createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+    processedAt: timestamp("processed_at"),
+});
+
+export const projectPulse = mysqlTable("project_pulse", {
+    id: varchar("id", { length: 255 }).primaryKey(),
+    projectId: varchar("project_id", { length: 255 }).notNull(),
+    type: varchar("type", { length: 50 }).notNull(), // SUCCESS, INFO, WARNING, CRITICAL
+    title: varchar("title", { length: 255 }).notNull(),
+    message: text("message").notNull(),
+    time: timestamp("time").default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const projectReminders = mysqlTable("project_reminders", {
+    id: varchar("id", { length: 255 }).primaryKey(),
+    projectId: varchar("project_id", { length: 255 }).notNull(),
+    userId: int("user_id").notNull(),
+    title: varchar("title", { length: 255 }).notNull(),
+    message: text("message").notNull(),
+    dueDate: timestamp("due_date"),
+    isRead: boolean("is_read").default(false),
+    createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+});
+

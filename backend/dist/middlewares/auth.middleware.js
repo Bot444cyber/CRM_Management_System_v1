@@ -8,7 +8,7 @@ const authenticate = (req, res, next) => {
         res.status(401).json({ error: "Unauthorized: Missing or invalid token" });
         return;
     }
-    const token = authHeader.split(" ")[1];
+    const token = authHeader.replace(/^Bearer\s+/i, "");
     const payload = (0, jwt_1.verifyAccessToken)(token);
     if (!payload) {
         res.status(401).json({ error: "Unauthorized: Token expired or invalid" });

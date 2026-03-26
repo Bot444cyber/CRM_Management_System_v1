@@ -14,7 +14,6 @@ import {
   ShoppingBag,
   Settings,
   ChevronRight,
-  ChevronDown,
   Box,
   Tag,
 } from 'lucide-react';
@@ -83,6 +82,10 @@ const Sidebar = ({ onClose }: { onClose?: () => void }) => {
             <NavItem href="/dashboard/customers" active={pathname === "/dashboard/customers"} icon={<Users size={18} />} label="Customers" onClick={onClose} />
             <NavItem href="/dashboard/campaign" active={pathname === "/dashboard/campaign"} icon={<Megaphone size={18} />} label="Marketing" onClick={onClose} />
             <NavItem href="/dashboard/settings" active={pathname === "/dashboard/settings"} icon={<Settings size={18} />} label="Settings" onClick={onClose} />
+
+            <div className="pt-4 mt-4 border-t border-border/50">
+              <NavItem href="/projects" icon={<Layers size={18} />} label="Go to Project Management" onClick={onClose} />
+            </div>
           </div>
         </div>
 

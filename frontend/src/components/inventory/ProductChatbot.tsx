@@ -5,6 +5,7 @@ import ReactMarkdown from 'react-markdown';
 import { MessageSquare, X, Send, Bot, User, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useInventory } from '@/context/InventoryContext';
+import { apiFetch } from '@/lib/apiFetch';
 
 interface ChatMessage {
     id: string;
@@ -64,13 +65,8 @@ const ProductChatbot: React.FC = () => {
                 )
             );
 
-            const token = localStorage.getItem('accessToken');
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/ai/chat`, {
+            const response = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/ai/chat`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
                 body: JSON.stringify({
                     catalog: simplifiedCatalog,
                     messages: historyToBackend

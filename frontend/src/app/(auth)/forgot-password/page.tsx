@@ -30,7 +30,7 @@ function ForgotPasswordContent() {
 
         try {
             const toastId = toast.loading('Sending OTP...');
-            const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/forgot-password`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/forgot-password`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email })
@@ -78,7 +78,7 @@ function ForgotPasswordContent() {
         try {
             const otpString = otp.join('');
             const toastId = toast.loading('Verifying OTP...');
-            const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/verify-forgot-otp`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/verify-forgot-otp`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, otp: otpString })
@@ -111,7 +111,7 @@ function ForgotPasswordContent() {
         try {
             const otpString = otp.join('');
             const toastId = toast.loading('Resetting password...');
-            const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/reset-password`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/reset-password`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, otp: otpString, newPassword })

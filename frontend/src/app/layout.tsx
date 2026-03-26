@@ -19,13 +19,15 @@ export const metadata: Metadata = {
   description: "The ultimate platform for smart dashboards, lead management, and seamless integrations. Run your entire operation from one powerful CRM.",
 };
 
+import { SyncProvider } from '@/context/SyncContext';
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground transition-colors duration-300`}
       >
@@ -35,7 +37,9 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange={false}
         >
-          {children}
+          <SyncProvider>
+            {children}
+          </SyncProvider>
           <Toaster
             position="top-center"
             toastOptions={{

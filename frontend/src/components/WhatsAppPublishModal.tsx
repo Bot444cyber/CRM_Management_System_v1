@@ -5,6 +5,7 @@ import { X, Send, Users, AlertCircle, Loader2, Search, CheckSquare, Square, User
 import ModalPortal from './ModalPortal';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
+import { apiFetch } from '@/lib/apiFetch';
 
 interface WhatsAppContact {
     id: string;
@@ -45,10 +46,7 @@ export default function WhatsAppPublishModal({ isOpen, onClose, productDetails }
     const fetchContacts = async () => {
         setIsLoading(true);
         try {
-            const token = localStorage.getItem('accessToken');
-            const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/whatsapp/groups`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/whatsapp/groups`);
 
             if (!res.ok) {
                 let errMsg = 'Failed to fetch contacts';
@@ -106,13 +104,8 @@ export default function WhatsAppPublishModal({ isOpen, onClose, productDetails }
         setError('');
 
         try {
-            const token = localStorage.getItem('accessToken');
-            const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/whatsapp/publish`, {
+            const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/whatsapp/publish`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
                 body: JSON.stringify({
                     groupIds: selectedIds,
                     productDetails: {
@@ -176,8 +169,8 @@ export default function WhatsAppPublishModal({ isOpen, onClose, productDetails }
                     <div className="p-5 flex flex-col gap-4 overflow-hidden flex-1">
                         {error && (
                             <div className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in slide-in-from-top-2 shrink-0 ${error.toLowerCase().includes('configure')
-                                    ? 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-500'
-                                    : 'bg-destructive/10 border-destructive/20 text-destructive'
+                                ? 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-500'
+                                : 'bg-destructive/10 border-destructive/20 text-destructive'
                                 }`}>
                                 <div className="flex items-start sm:items-center gap-3">
                                     <AlertCircle size={20} className="shrink-0 mt-0.5 sm:mt-0" />

@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteInventory = exports.updateInventory = exports.createInventory = exports.getInventories = void 0;
+exports.getInventoryProjects = exports.deleteInventory = exports.updateInventory = exports.createInventory = exports.getInventories = void 0;
 const db_1 = require("../config/db");
 const schema_1 = require("../db/schema");
 const drizzle_orm_1 = require("drizzle-orm");
@@ -282,3 +282,34 @@ const deleteInventory = async (req, res) => {
     }
 };
 exports.deleteInventory = deleteInventory;
+const getInventoryProjects = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { projectInventory, projects } = await Promise.resolve().then(() => __importStar(require("../db/schema")));
+        // Find all reservations for this inventory ID
+        const links = await db_1.db.select().from(projectInventory).where((0, drizzle_orm_1.eq)(projectInventory.inventoryId, id));
+        if (!links.length) {
+            res.status(200).json([]);
+            return;
+        }
+        const result = [];
+        for (const link of links) {
+            // Fetch associated project
+            const prj = await db_1.db.select().from(projects).where((0, drizzle_orm_1.eq)(projects.id, link.projectId)).limit(1);
+            if (prj.length) {
+                result.push({
+                    ...prj[0],
+                    usedAs: link.subProductName,
+                    reservedQuantity: link.reservedQuantity,
+                    requiredQuantity: link.requiredQuantity
+                });
+            }
+        }
+        res.status(200).json(result);
+    }
+    catch (error) {
+        console.error("Error fetching inventory projects:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+exports.getInventoryProjects = getInventoryProjects;

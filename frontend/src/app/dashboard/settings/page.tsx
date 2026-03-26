@@ -27,7 +27,7 @@ export default function SettingsPage() {
     React.useEffect(() => {
         const fetchGreenAPI = async () => {
             try {
-                const res = await apiFetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/settings/green-api`, {
+                const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/settings/green-api`, {
                     method: 'GET',
                 });
                 if (res.ok) {
@@ -46,7 +46,7 @@ export default function SettingsPage() {
         setIsSavingGreenApi(true);
         setGreenApiSuccess(false);
         try {
-            const res = await apiFetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/settings/green-api`, {
+            const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/settings/green-api`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ greenApiInstanceId, greenApiToken })
@@ -72,7 +72,7 @@ export default function SettingsPage() {
         setError(null);
 
         try {
-            const res = await apiFetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/settings/wipe-data`, {
+            const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/settings/wipe-data`, {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ confirmation: confirmText })

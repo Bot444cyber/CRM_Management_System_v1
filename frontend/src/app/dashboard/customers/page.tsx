@@ -29,7 +29,7 @@ interface Toast {
     type: 'success' | 'error';
 }
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL;
 const LIMIT = 10;
 
 let toastCounter = 0;

@@ -191,7 +191,7 @@ const Analytics = () => {
         setDayDetail({ date: dateStr, isoDate, sales: [], loading: true });
         try {
             const res = await apiFetch(
-                `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/marketing/sales?date=${isoDate}`
+                `${process.env.NEXT_PUBLIC_API_URL}/api/marketing/sales?date=${isoDate}`
             );
             if (res.ok) {
                 const json = await res.json();
@@ -208,7 +208,7 @@ const Analytics = () => {
         const fetchAnalytics = async () => {
             try {
                 const res = await apiFetch(
-                    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/analytics?inventoryId=${selectedInventory}`
+                    `${process.env.NEXT_PUBLIC_API_URL}/api/analytics?inventoryId=${selectedInventory}`
                 );
                 if (res.ok) setData(await res.json());
             } catch (err) { console.error('Failed to fetch analytics:', err); }
@@ -216,7 +216,7 @@ const Analytics = () => {
 
         const fetchInsights = async () => {
             try {
-                const res = await apiFetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/analytics/insights`);
+                const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/analytics/insights`);
                 if (res.ok) setInsights(await res.json());
             } catch (err) { console.error('Failed to fetch insights:', err); }
         };
@@ -224,7 +224,7 @@ const Analytics = () => {
         const fetchSalesBreakdown = async () => {
             try {
                 const res = await apiFetch(
-                    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/analytics/sales-breakdown`
+                    `${process.env.NEXT_PUBLIC_API_URL}/api/analytics/sales-breakdown`
                 );
                 if (res.ok) setSalesBreakdown(await res.json());
             } catch (err) { console.error('Failed to fetch sales breakdown:', err); }

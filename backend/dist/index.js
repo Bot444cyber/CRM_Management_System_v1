@@ -3,9 +3,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
-const dotenv_1 = __importDefault(require("dotenv"));
 const auth_routes_1 = __importDefault(require("./routes/auth.routes"));
 const inventory_routes_1 = __importDefault(require("./routes/inventory.routes"));
 const analytics_routes_1 = __importDefault(require("./routes/analytics.routes"));
@@ -15,8 +16,8 @@ const marketing_routes_1 = __importDefault(require("./routes/marketing.routes"))
 const settings_routes_1 = __importDefault(require("./routes/settings.routes"));
 const ai_routes_1 = __importDefault(require("./routes/ai.routes"));
 const whatsapp_routes_1 = __importDefault(require("./routes/whatsapp.routes"));
+const pms_routes_1 = __importDefault(require("./routes/pms.routes"));
 const db_1 = require("./config/db");
-dotenv_1.default.config();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 5000;
 app.use(express_1.default.json({ limit: "50mb" }));
@@ -31,6 +32,7 @@ app.use("/api/marketing", marketing_routes_1.default);
 app.use("/api/settings", settings_routes_1.default);
 app.use("/api/ai", ai_routes_1.default);
 app.use("/api/whatsapp", whatsapp_routes_1.default);
+app.use("/api/pms", pms_routes_1.default);
 app.get("/", (req, res) => {
     res.send("CRM Backend API is running");
 });

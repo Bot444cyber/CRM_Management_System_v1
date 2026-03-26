@@ -31,7 +31,7 @@ function RegisterContent() {
 
         try {
             const toastId = toast.loading('Creating account...');
-            const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/register`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/register`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, password, fullName })
@@ -86,7 +86,7 @@ function RegisterContent() {
         try {
             const otpString = otp.join('');
             const toastId = toast.loading('Verifying OTP...');
-            const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/verify-otp`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/verify-otp`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, password, fullName, otp: otpString })
@@ -113,7 +113,7 @@ function RegisterContent() {
     const handleGoogleSuccess = async (credentialResponse: any) => {
         try {
             const toastId = toast.loading('Signing up with Google...');
-            const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/google`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/google`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ token: credentialResponse.credential })

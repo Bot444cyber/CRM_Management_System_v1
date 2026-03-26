@@ -16,7 +16,8 @@ export const authenticate = (req: Request, res: Response, next: NextFunction): v
         return;
     }
 
-    const token = authHeader.split(" ")[1];
+    const token = authHeader.replace(/^Bearer\s+/i, "");
+
     const payload = verifyAccessToken(token);
 
     if (!payload) {

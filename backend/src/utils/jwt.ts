@@ -7,6 +7,7 @@ const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || "fallback-access-secret";
 const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "fallback-refresh-secret";
 
 export interface JwtPayload {
+
     userId: number;
     email: string;
     role: string | null;
