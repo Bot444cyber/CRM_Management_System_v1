@@ -61,115 +61,111 @@ export default function SettingsView({ projectId, project, currentUserRole, refr
     };
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="max-w-4xl mx-auto space-y-12 pb-32 px-4"
-        >
-            <div className="flex items-center justify-between mb-8">
-                <div>
-                    <h2 className="text-xl font-bold tracking-tight mb-1">Project Settings</h2>
-                    <p className="text-xs text-muted-foreground font-medium flex items-center gap-2 opacity-70">
-                        <Sliders size={12} className="text-primary" /> Update project details, status, and timeline.
-                    </p>
-                </div>
-                <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary border border-primary/20">
-                    <Settings size={18} className="animate-[spin_4s_linear_infinite]" />
+        <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in duration-500">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-secondary border border-border rounded-xl flex items-center justify-center text-muted-foreground shadow-sm">
+                        <Settings size={20} />
+                    </div>
+                    <div>
+                        <h2 className="text-lg font-black text-foreground uppercase tracking-tight">Project Settings</h2>
+                        <p className="text-xs text-muted-foreground opacity-80 uppercase font-black tracking-widest leading-none">Configuration and management for this workspace node.</p>
+                    </div>
                 </div>
             </div>
 
-            <div className="bg-white/5 border border-white/5 rounded-2xl p-8 shadow-xl relative overflow-hidden">
-                <div className="grid grid-cols-1 gap-8 relative z-10">
-                    <div className="space-y-3">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/40 ml-1 flex items-center gap-2">
-                            <Info size={10} className="text-primary/40" /> Project Name
+            <div className="bg-card/40 border border-border/50 rounded-2xl p-6 md:p-8 space-y-8 shadow-sm backdrop-blur-md">
+                <div className="grid grid-cols-1 gap-8">
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">
+                            Project Designation
                         </label>
-                        <div className="relative group/input">
-                            <input
-                                type="text"
-                                value={name}
-                                onChange={e => setName(e.target.value)}
-                                className="w-full bg-black/20 border border-white/5 rounded-xl px-4 py-3 text-sm font-bold tracking-tight focus:ring-2 focus:ring-primary/10 transition-all outline-none"
-                                placeholder="e.g. Website Redesign"
-                            />
-                        </div>
+                        <input
+                            type="text"
+                            value={name}
+                            onChange={e => setName(e.target.value)}
+                            className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm font-black text-foreground uppercase tracking-tight focus:ring-1 focus:ring-primary/50 transition-all outline-none"
+                            placeholder="e.g. Enterprise CRM Launch"
+                        />
                     </div>
 
-                    <div className="space-y-3">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/40 ml-1 flex items-center gap-2">
-                            <Layout size={10} className="text-primary/40" /> Description
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">
+                            Operational Description
                         </label>
                         <textarea
                             value={description}
                             onChange={e => setDescription(e.target.value)}
                             rows={3}
-                            className="w-full bg-black/20 border border-white/5 rounded-xl px-4 py-3 text-xs font-medium leading-relaxed focus:ring-2 focus:ring-primary/10 transition-all outline-none resize-none"
-                            placeholder="Enter project description..."
+                            className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm font-bold text-muted-foreground focus:ring-1 focus:ring-primary/50 transition-all outline-none resize-none"
+                            placeholder="Briefly describe the project goals..."
                         />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div className="space-y-3">
-                            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/40 ml-1 flex items-center gap-2">
-                                <Globe size={10} className="text-primary/40" /> Status
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">
+                                Deployment Status
                             </label>
                             <div className="relative">
                                 <select
                                     value={status}
                                     onChange={e => setStatus(e.target.value)}
-                                    className="w-full bg-black/20 border border-white/5 rounded-xl px-4 py-3 text-xs font-bold uppercase tracking-wider focus:ring-2 focus:ring-primary/10 transition-all outline-none appearance-none cursor-pointer"
+                                    className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm font-black text-foreground uppercase tracking-widest focus:ring-1 focus:ring-primary/50 transition-all outline-none appearance-none cursor-pointer"
                                 >
-                                    <option value="Active" className="bg-background text-foreground">Active</option>
-                                    <option value="On Hold" className="bg-background text-foreground">Hold</option>
-                                    <option value="Completed" className="bg-background text-foreground">Completed</option>
-                                    <option value="Archived" className="bg-background text-foreground">Archived</option>
+                                    <option value="Active">Active</option>
+                                    <option value="On Hold">On Hold</option>
+                                    <option value="Completed">Completed</option>
+                                    <option value="Archived">Archived</option>
                                 </select>
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground opacity-40">
+                                    <Sliders size={14} />
+                                </div>
                             </div>
                         </div>
 
-                        <div className="space-y-3">
-                            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/40 ml-1 flex items-center gap-2">
-                                <Calendar size={10} className="text-primary/40" /> Deadline
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">
+                                Execution Deadline
                             </label>
                             <input
                                 type="date"
                                 value={deadline}
                                 onChange={e => setDeadline(e.target.value)}
-                                className="w-full bg-black/20 border border-white/5 rounded-xl px-4 py-3 text-xs font-bold focus:ring-2 focus:ring-primary/10 transition-all outline-none cursor-pointer"
+                                className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm font-black text-foreground focus:ring-1 focus:ring-primary/50 transition-all outline-none cursor-pointer"
                             />
                         </div>
                     </div>
                 </div>
 
-                <div className="flex items-center justify-end pt-8 relative z-10">
-                    <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
+                <div className="flex items-center justify-end pt-4 border-t border-border/30">
+                    <button
                         onClick={handleSave}
                         disabled={saving}
-                        className="bg-primary text-primary-foreground px-8 py-3 rounded-xl font-bold uppercase tracking-wider text-[10px] shadow-lg shadow-primary/20 flex items-center gap-2 disabled:opacity-50"
+                        className="bg-foreground hover:opacity-90 text-background px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg hover:-translate-y-px active:translate-y-0 disabled:opacity-50 flex items-center gap-2"
                     >
-                        <Save size={14} /> {saving ? 'Saving...' : 'Save Settings'}
-                    </motion.button>
+                        <Save size={14} />
+                        {saving ? 'Processing...' : 'Sync Configuration'}
+                    </button>
                 </div>
             </div>
 
             {(currentUserRole === 'admin' || currentUserRole === 'manager') && (
-                <div className="pt-8">
-                    <div className="bg-rose-500/5 border border-rose-500/10 rounded-2xl p-8 relative overflow-hidden group/danger">
-                        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8 relative z-10">
-                            <div className="flex items-start gap-4">
-                                <div className="w-12 h-12 bg-rose-500/10 text-rose-500 rounded-xl flex items-center justify-center shrink-0 border border-rose-500/20 shadow-lg shadow-rose-500/5">
-                                    <ShieldAlert size={24} />
-                                </div>
-                                <div className="space-y-0.5">
-                                    <h3 className="text-lg font-bold text-rose-500 tracking-tight uppercase">Danger Zone</h3>
-                                    <p className="text-[11px] text-rose-500/60 font-medium leading-relaxed max-w-sm">
-                                        Deleting a project is permanent. All associated data, milestones, and member links will be removed.
-                                    </p>
-                                </div>
+                <div className="pt-4">
+                    <div className="bg-destructive/5 border border-destructive/20 rounded-2xl p-6 md:p-8 space-y-6 shadow-xs">
+                        <div className="flex items-start gap-4">
+                            <div className="w-12 h-12 bg-destructive/10 text-destructive rounded-xl flex items-center justify-center shrink-0 border border-destructive/20 shadow-sm">
+                                <ShieldAlert size={24} />
                             </div>
+                            <div className="space-y-1.5 pt-0.5">
+                                <h3 className="text-[11px] font-black text-destructive uppercase tracking-widest">Protocol Breach: Danger Zone</h3>
+                                <p className="text-[11px] text-muted-foreground leading-relaxed font-bold uppercase opacity-80 tracking-tight">
+                                    Deleting this project will permanently remove all associated tasks, milestones, and shared resources from the network. This action is final and irreversible. Proceed with extreme caution.
+                                </p>
+                            </div>
+                        </div>
 
+                        <div className="flex justify-end pt-2">
                             <AnimatePresence mode="wait">
                                 {!showDeleteConfirm ? (
                                     <motion.button
@@ -178,34 +174,30 @@ export default function SettingsView({ projectId, project, currentUserRole, refr
                                         animate={{ opacity: 1 }}
                                         exit={{ opacity: 0 }}
                                         onClick={() => setShowDeleteConfirm(true)}
-                                        className="w-full lg:w-auto bg-rose-500/10 text-rose-500 px-6 py-3 rounded-xl font-bold uppercase tracking-wider text-[10px] hover:bg-rose-500 hover:text-white transition-all border border-rose-500/10 shadow-lg"
+                                        className="bg-destructive/10 hover:bg-destructive text-destructive hover:text-white px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all border border-destructive/20 shadow-xs"
                                     >
-                                        Delete Project
+                                        Terminate Project
                                     </motion.button>
                                 ) : (
                                     <motion.div
                                         key="confirm-box"
-                                        initial={{ opacity: 0, scale: 0.98 }}
+                                        initial={{ opacity: 0, scale: 0.95 }}
                                         animate={{ opacity: 1, scale: 1 }}
-                                        className="flex flex-col sm:flex-row items-center gap-3 bg-black/40 p-3 rounded-2xl border border-rose-500/20"
+                                        className="flex items-center gap-2 p-2 bg-background border border-destructive/30 rounded-xl shadow-2xl"
                                     >
-                                        <div className="flex items-center gap-2 text-rose-500 text-[10px] font-bold uppercase tracking-wider px-3">
-                                            Confirm Deletion?
-                                        </div>
-                                        <div className="flex items-center gap-2 w-full sm:w-auto">
-                                            <button
-                                                onClick={handleDelete}
-                                                className="flex-1 sm:flex-none bg-rose-500 text-white px-5 py-2.5 rounded-lg font-bold uppercase tracking-wider text-[10px] hover:bg-rose-600 transition-colors shadow-lg shadow-rose-500/20"
-                                            >
-                                                DELETE
-                                            </button>
-                                            <button
-                                                onClick={() => setShowDeleteConfirm(false)}
-                                                className="flex-1 sm:flex-none bg-white/5 text-foreground px-5 py-2.5 rounded-lg font-bold uppercase tracking-wider text-[10px] hover:bg-white/10 transition-colors border border-white/5"
-                                            >
-                                                CANCEL
-                                            </button>
-                                        </div>
+                                        <span className="text-[9px] font-black text-destructive uppercase px-3 tracking-widest">Confirm Termination?</span>
+                                        <button
+                                            onClick={handleDelete}
+                                            className="bg-destructive hover:bg-destructive/90 text-white px-4 py-2 rounded-lg font-black text-[9px] uppercase tracking-widest transition-all"
+                                        >
+                                            YES, DELETE
+                                        </button>
+                                        <button
+                                            onClick={() => setShowDeleteConfirm(false)}
+                                            className="bg-secondary hover:bg-accent text-muted-foreground px-4 py-2 rounded-lg font-black text-[9px] uppercase tracking-widest transition-all"
+                                        >
+                                            CANCEL
+                                        </button>
                                     </motion.div>
                                 )}
                             </AnimatePresence>
@@ -213,6 +205,6 @@ export default function SettingsView({ projectId, project, currentUserRole, refr
                     </div>
                 </div>
             )}
-        </motion.div>
+        </div>
     );
 }

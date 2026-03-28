@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { db } from "../config/db";
-import { workspaces, projects, projectInventory, inventories, workspaceMembers } from "../db/schema";
-import { eq, and, or, sql } from "drizzle-orm";
+import { workspaces, projects, projectInventory, inventories, workspaceMembers, projectMembers, projectMilestones, projectPulse, resourceRequests, projectReminders, users } from "../db/schema";
+import { eq, and, or, sql, desc } from "drizzle-orm";
 import crypto from "crypto";
 
 export const getWorkspaces = async (req: Request, res: Response): Promise<void> => {
@@ -114,6 +114,127 @@ export const joinWorkspace = async (req: Request, res: Response): Promise<void> 
         res.status(200).json({ message: "Joined workspace successfully", workspaceId });
     } catch (error) {
         console.error("Error joining workspace:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+
+export const getWorkspace = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id } = req.params;
+        const userId = req.user?.userId;
+
+        if (!userId) {
+            res.status(401).json({ message: "Unauthorized" });
+            return;
+        }
+
+        const wsRows = await db.select({
+            id: workspaces.id,
+            name: workspaces.name,
+            description: workspaces.description,
+            passKey: workspaces.passKey,
+            createdAt: workspaces.createdAt,
+            role: workspaceMembers.role
+        })
+            .from(workspaces)
+            .innerJoin(workspaceMembers, eq(workspaceMembers.workspaceId, workspaces.id))
+            .where(and(eq(workspaces.id, id as string), eq(workspaceMembers.userId, userId)))
+            .limit(1);
+
+        if (!wsRows.length) {
+            res.status(404).json({ message: "Workspace not found or access denied" });
+            return;
+        }
+
+        res.status(200).json(wsRows[0]);
+    } catch (error) {
+        console.error("Error fetching workspace details:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+
+export const updateWorkspace = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id } = req.params;
+        const { name, description } = req.body;
+        const userId = req.user?.userId;
+
+        if (!userId) {
+            res.status(401).json({ message: "Unauthorized" });
+            return;
+        }
+
+        // Only owner can update
+        const membership = await db.select().from(workspaceMembers)
+            .where(and(eq(workspaceMembers.workspaceId, id as string), eq(workspaceMembers.userId, userId), eq(workspaceMembers.role, 'owner')))
+            .limit(1);
+
+        if (!membership.length) {
+            res.status(403).json({ message: "Only workspace owners can update settings" });
+            return;
+        }
+
+        await db.update(workspaces)
+            .set({
+                name: name || undefined,
+                description: description !== undefined ? description : undefined
+            })
+            .where(eq(workspaces.id, id as string));
+
+        res.status(200).json({ message: "Workspace updated successfully" });
+    } catch (error) {
+        console.error("Error updating workspace:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+
+export const deleteWorkspace = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id } = req.params;
+        const userId = req.user?.userId;
+
+        if (!userId) {
+            res.status(401).json({ message: "Unauthorized" });
+            return;
+        }
+
+        // Verify owner
+        const membership = await db.select().from(workspaceMembers)
+            .where(and(eq(workspaceMembers.workspaceId, id as string), eq(workspaceMembers.userId, userId), eq(workspaceMembers.role, 'owner')))
+            .limit(1);
+
+        if (!membership.length) {
+            res.status(403).json({ message: "Only workspace owners can delete workspaces" });
+            return;
+        }
+
+        // Cleanup everything in the workspace
+        // 1. Get all projects
+        const workspaceProjects = await db.select({ id: projects.id }).from(projects).where(eq(projects.workspaceId, id as string));
+        const projectIds = workspaceProjects.map(p => p.id);
+
+        if (projectIds.length > 0) {
+            // Delete project-related data
+            for (const pid of projectIds) {
+                await db.delete(projectMembers).where(eq(projectMembers.projectId, pid));
+                await db.delete(projectMilestones).where(eq(projectMilestones.projectId, pid));
+                await db.delete(projectPulse).where(eq(projectPulse.projectId, pid));
+                await db.delete(projectInventory).where(eq(projectInventory.projectId, pid));
+                await db.delete(resourceRequests).where(eq(resourceRequests.projectId, pid));
+                await db.delete(projectReminders).where(eq(projectReminders.projectId, pid));
+            }
+            await db.delete(projects).where(eq(projects.workspaceId, id as string));
+        }
+
+        // 2. Delete members
+        await db.delete(workspaceMembers).where(eq(workspaceMembers.workspaceId, id as string));
+
+        // 3. Delete workspace
+        await db.delete(workspaces).where(eq(workspaces.id, id as string));
+
+        res.status(200).json({ message: "Workspace and all associated data deleted successfully" });
+    } catch (error) {
+        console.error("Error deleting workspace:", error);
         res.status(500).json({ message: "Server error" });
     }
 };
@@ -250,7 +371,20 @@ export const getProjects = async (req: Request, res: Response): Promise<void> =>
                 }
             }
 
-            result.push({ ...prj, health, atRiskCount });
+            // Fetch project members
+            const members = await db
+                .select({ email: users.email })
+                .from(projectMembers)
+                .innerJoin(users, eq(projectMembers.userId, users.id))
+                .where(eq(projectMembers.projectId, prj.id));
+
+            result.push({
+                ...prj,
+                health,
+                atRiskCount,
+                projectMembers: members.slice(0, 2).map(m => m.email),
+                totalMemberCount: members.length
+            });
         }
 
         res.status(200).json(result);

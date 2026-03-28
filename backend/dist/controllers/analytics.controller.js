@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getSalesBreakdown = exports.getDashboardInsights = exports.getAnalytics = void 0;
+exports.getPMSSummary = exports.getSalesBreakdown = exports.getDashboardInsights = exports.getAnalytics = void 0;
 const db_1 = require("../config/db");
 const schema_1 = require("../db/schema");
 const drizzle_orm_1 = require("drizzle-orm");
@@ -327,3 +327,100 @@ const getSalesBreakdown = async (req, res) => {
     }
 };
 exports.getSalesBreakdown = getSalesBreakdown;
+// ── GET /api/pms/analytics/summary ──────────────────────────────────────────
+const getPMSSummary = async (req, res) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) {
+            res.status(401).json({ message: "Unauthorized" });
+            return;
+        }
+        // 1. Fetch Workspaces where user is a member
+        const myWorkspaces = await db_1.db
+            .select({ id: schema_1.workspaces.id, name: schema_1.workspaces.name })
+            .from(schema_1.workspaces)
+            .innerJoin(schema_1.workspaceMembers, (0, drizzle_orm_1.eq)(schema_1.workspaceMembers.workspaceId, schema_1.workspaces.id))
+            .where((0, drizzle_orm_1.eq)(schema_1.workspaceMembers.userId, userId));
+        if (myWorkspaces.length === 0) {
+            res.status(200).json({
+                workspaces: { total: 0, list: [] },
+                projects: { total: 0, statusDistribution: [], healthDistribution: [] },
+                team: { total: 0, roleDistribution: [] },
+                activity: []
+            });
+            return;
+        }
+        const workspaceIds = myWorkspaces.map(ws => ws.id);
+        // 2. Fetch Projects across these workspaces
+        const allProjects = await db_1.db
+            .select()
+            .from(schema_1.projects)
+            .where((0, drizzle_orm_1.inArray)(schema_1.projects.workspaceId, workspaceIds));
+        // 3. Fetch Global Team Members with Workspace Mapping
+        const teamMembers = await db_1.db
+            .select({
+            role: schema_1.workspaceMembers.role,
+            userId: schema_1.workspaceMembers.userId,
+            workspaceId: schema_1.workspaceMembers.workspaceId
+        })
+            .from(schema_1.workspaceMembers)
+            .where((0, drizzle_orm_1.inArray)(schema_1.workspaceMembers.workspaceId, workspaceIds));
+        // 4. Fetch Global Pulse Events with Workspace Mapping
+        const recentPulse = await db_1.db
+            .select({
+            id: schema_1.projectPulse.id,
+            type: schema_1.projectPulse.type,
+            title: schema_1.projectPulse.title,
+            message: schema_1.projectPulse.message,
+            time: schema_1.projectPulse.time,
+            workspaceId: schema_1.projects.workspaceId
+        })
+            .from(schema_1.projectPulse)
+            .innerJoin(schema_1.projects, (0, drizzle_orm_1.eq)(schema_1.projectPulse.projectId, schema_1.projects.id))
+            .where((0, drizzle_orm_1.inArray)(schema_1.projects.workspaceId, workspaceIds))
+            .orderBy((0, drizzle_orm_1.desc)(schema_1.projectPulse.time))
+            .limit(10);
+        // ── Aggregation ──
+        // Projects Status
+        const statusMap = new Map();
+        allProjects.forEach(p => {
+            const status = p.status || 'Active';
+            statusMap.set(status, (statusMap.get(status) || 0) + 1);
+        });
+        // Team Roles
+        const roleMap = new Map();
+        const uniqueMembers = new Set();
+        teamMembers.forEach(m => {
+            uniqueMembers.add(m.userId);
+            roleMap.set(m.role, (roleMap.get(m.role) || 0) + 1);
+        });
+        res.status(200).json({
+            workspaces: {
+                total: myWorkspaces.length,
+                list: myWorkspaces
+            },
+            projects: {
+                total: allProjects.length,
+                statusDistribution: Array.from(statusMap.entries()).map(([name, value]) => ({ name, value })),
+                list: allProjects.map(p => ({
+                    id: p.id,
+                    name: p.name,
+                    status: p.status,
+                    workspaceId: p.workspaceId,
+                    deadline: p.deadline
+                }))
+            },
+            team: {
+                total: uniqueMembers.size,
+                roleDistribution: Array.from(roleMap.entries()).map(([name, value]) => ({ name, value })),
+                list: teamMembers // Include raw list for frontend filtering
+            },
+            activity: recentPulse
+        });
+    }
+    catch (error) {
+        console.error("Error fetching PMS summary:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+exports.getPMSSummary = getPMSSummary;

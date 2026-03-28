@@ -1,5 +1,5 @@
 import express from "express";
-import { getWorkspaces, createWorkspace, joinWorkspace, getProjects, createProject, getProject, updateProject, deleteProject, getWorkspaceMembers, updateWorkspaceMember, removeWorkspaceMember } from "../controllers/project.controller";
+import { getWorkspaces, createWorkspace, joinWorkspace, getWorkspace, updateWorkspace, deleteWorkspace, getProjects, createProject, getProject, updateProject, deleteProject, getWorkspaceMembers, updateWorkspaceMember, removeWorkspaceMember } from "../controllers/project.controller";
 
 import { reserveInventory, getResourceRequests, createResourceRequest, processResourceRequest } from "../controllers/resource.controller";
 import { getProjectMilestones, createProjectMilestone, updateProjectMilestone } from "../controllers/milestone.controller";
@@ -7,6 +7,7 @@ import { getProjectMembers, addProjectMember, removeProjectMember, getProjectInv
 import { searchUsers } from "../controllers/user.controller";
 import { getProjectPulse, createPulseEvent } from "../controllers/pulse.controller";
 import { getProjectReminders, createReminder, markReminderAsRead, getAllUserReminders } from "../controllers/reminder.controller";
+import { getPMSSummary } from "../controllers/analytics.controller";
 import { authenticate, authorizeRoles } from "../middlewares/auth.middleware";
 
 const router = express.Router();
@@ -18,12 +19,16 @@ router.use(authenticate);
 router.get("/workspaces", getWorkspaces);
 router.post("/workspaces", createWorkspace);  // Any authenticated user can create their own workspace
 router.post("/workspaces/join", joinWorkspace); // Join via pass-key
+router.get("/workspaces/:id/details", getWorkspace);   // Get workspace details
+router.patch("/workspaces/:id", updateWorkspace); // Update workspace settings
+router.delete("/workspaces/:id", deleteWorkspace); // Delete workspace
 router.get("/reminders", getAllUserReminders); // Global reminders
 router.get("/workspaces/:id/members", getWorkspaceMembers); // View workspace members
 router.patch("/workspaces/:id/members/:memberId", updateWorkspaceMember); // Update workspace member role
 router.delete("/workspaces/:id/members/:memberId", removeWorkspaceMember); // Remove workspace member
 router.get("/team/global", getGlobalTeam);     // Fetch all unique members across owned/managed workspaces
 router.get("/users/search", searchUsers);      // Search users for member addition
+router.get("/analytics/summary", getPMSSummary); // Aggregated PMS intelligence summary
 
 
 // ── Projects ─────────────────────────────────────────────────────────────────

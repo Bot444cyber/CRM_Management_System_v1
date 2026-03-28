@@ -694,7 +694,7 @@ const Analytics = () => {
                                 <div className="h-full flex flex-col animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200 fill-mode-both">
                                     <div className="flex justify-between items-start mb-6">
                                         <div className="flex items-center gap-4">
-                                            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-400 to-orange-600 p-[2px] shadow-[0_0_20px_rgba(251,191,36,0.3)]">
+                                            <div className="w-16 h-16 rounded-full bg-linear-to-br from-amber-400 to-orange-600 p-[2px] shadow-[0_0_20px_rgba(251,191,36,0.3)]">
                                                 <div className="w-full h-full bg-card rounded-full flex items-center justify-center text-xl font-bold text-amber-500">
                                                     {selectedCustomer.avatar || selectedCustomer.name.charAt(0).toUpperCase()}
                                                 </div>

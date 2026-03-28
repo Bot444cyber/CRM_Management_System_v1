@@ -14,12 +14,12 @@ import { useSync } from '@/context/SyncContext';
 import { apiFetch } from '@/lib/apiFetch';
 
 function getDueDateUrgency(dueDate: string | null, status: string) {
-    if (status === 'Completed' || !dueDate) return { color: '', label: '', bg: '', shadow: '' };
+    if (status === 'Completed' || !dueDate) return { color: '', label: '', bg: '' };
     const days = (new Date(dueDate).getTime() - Date.now()) / (1000 * 3600 * 24);
-    if (days < 0) return { color: 'text-rose-500', label: 'Overdue', bg: 'bg-rose-500/10', shadow: 'shadow-rose-500/10' };
-    if (days < 3) return { color: 'text-rose-400', label: `${Math.ceil(days)}d left`, bg: 'bg-rose-500/10', shadow: 'shadow-rose-500/10' };
-    if (days < 7) return { color: 'text-amber-500', label: `${Math.ceil(days)}d left`, bg: 'bg-amber-500/10', shadow: 'shadow-amber-500/10' };
-    return { color: 'text-muted-foreground/60', label: new Date(dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }), bg: 'bg-white/5', shadow: '' };
+    if (days < 0) return { color: 'text-destructive', label: 'Overdue', bg: 'bg-destructive/10' };
+    if (days < 3) return { color: 'text-destructive', label: `${Math.ceil(days)}d left`, bg: 'bg-destructive/10' };
+    if (days < 7) return { color: 'text-amber-500', label: `${Math.ceil(days)}d left`, bg: 'bg-amber-500/10' };
+    return { color: 'text-muted-foreground', label: new Date(dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }), bg: 'bg-secondary/50' };
 }
 
 export default function MilestoneView({ projectId, milestones = [], currentUserRole = 'user', refresh }: {
@@ -61,20 +61,6 @@ export default function MilestoneView({ projectId, milestones = [], currentUserR
         }
     };
 
-    const setReminder = async (m: any) => {
-        const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pms/${projectId}/reminders`, {
-            method: 'POST',
-            body: JSON.stringify({
-                title: `Reminder: ${m.name}`,
-                message: `Milestone "${m.name}" is due on ${new Date(m.dueDate).toLocaleDateString()}.`,
-                dueDate: m.dueDate
-            })
-        });
-        if (res.ok) {
-            toast.success('Reminder set');
-        }
-    };
-
     const filteredMilestones = (milestones || []).filter(m => {
         if (filterStatus === 'all') return true;
         return m.status === filterStatus;
@@ -91,278 +77,200 @@ export default function MilestoneView({ projectId, milestones = [], currentUserR
     };
 
     return (
-        <div className="space-y-12 pb-20">
-            {/* Executive Summary Row */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="space-y-8 animate-in fade-in duration-500">
+            {/* Stats Overview */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                    { label: 'Total Matrix', value: stats.total, icon: Layers, color: 'text-primary', bg: 'bg-primary/5' },
-                    { label: 'Synchronized', value: stats.completed, icon: Check, color: 'text-emerald-500', bg: 'bg-emerald-500/5' },
-                    { label: 'Active Process', value: stats.ongoing, icon: Activity, color: 'text-sky-500', bg: 'bg-sky-500/5' },
-                    { label: 'Risk Factor', value: stats.atRisk, icon: AlertTriangle, color: stats.atRisk > 0 ? 'text-rose-500' : 'text-emerald-500', bg: stats.atRisk > 0 ? 'bg-rose-500/5' : 'bg-emerald-500/5' },
-                ].map((stat, i) => (
-                    <motion.div
-                        key={stat.label}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.1 }}
-                        className="bg-zinc-900/40 backdrop-blur-3xl border border-zinc-800/50 p-5 rounded-[2rem] hover:border-zinc-700 transition-all group"
-                    >
-                        <div className="flex items-center justify-between mb-3">
-                            <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center border border-current/10", stat.color, stat.bg)}>
-                                <stat.icon size={14} />
-                            </div>
-                            <span className="text-[10px] font-black text-muted-foreground/20 uppercase tracking-widest italic group-hover:text-muted-foreground/40 transition-colors">Nominal</span>
+                    { label: 'Total Tasks', value: stats.total, icon: Layers, color: 'text-primary' },
+                    { label: 'Completed', value: stats.completed, icon: Check, color: 'text-emerald-500' },
+                    { label: 'In Progress', value: stats.ongoing, icon: Activity, color: 'text-blue-500' },
+                    { label: 'At Risk', value: stats.atRisk, icon: AlertTriangle, color: stats.atRisk > 0 ? 'text-destructive' : 'text-muted-foreground' },
+                ].map((stat) => (
+                    <div key={stat.label} className="bg-card border border-border/50 p-4 rounded-xl shadow-sm">
+                        <div className="flex items-center gap-3 mb-2">
+                            <stat.icon size={14} className={stat.color} />
+                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{stat.label}</span>
                         </div>
-                        <div className="flex items-baseline gap-2">
-                            <span className={cn("text-2xl font-black italic tracking-tighter", stat.color)}>{stat.value}</span>
-                            <span className="text-[8px] font-black text-muted-foreground/30 uppercase tracking-[0.2em]">{stat.label}</span>
-                        </div>
-                    </motion.div>
+                        <p className="text-xl font-bold text-foreground">{stat.value}</p>
+                    </div>
                 ))}
             </div>
 
-            {/* Header / Control Section */}
-            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 bg-zinc-900/40 backdrop-blur-3xl border border-zinc-800/50 p-6 rounded-[2.5rem] relative overflow-hidden group">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-[100px] pointer-events-none group-hover:bg-primary/10 transition-colors duration-1000" />
-
-                <div className="relative z-10">
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="w-10 h-10 bg-zinc-950 border border-zinc-800 rounded-2xl flex items-center justify-center text-primary shadow-inner">
-                            <Sparkles size={20} className="animate-pulse" />
-                        </div>
-                        <div>
-                            <h2 className="text-lg font-black tracking-tight uppercase italic group-hover:text-primary transition-colors">Strategic Objectives</h2>
-                            <p className="text-[10px] font-black text-muted-foreground/30 uppercase tracking-[0.2em]">Neural Path & Milestone Synthesis</p>
-                        </div>
+            {/* Header & Controls */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-secondary border border-border rounded-xl flex items-center justify-center text-primary shadow-sm">
+                        <Target size={20} />
+                    </div>
+                    <div>
+                        <h2 className="text-lg font-bold text-foreground">Project Milestones</h2>
+                        <p className="text-xs text-muted-foreground">Track key objectives and delivery timelines.</p>
                     </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 relative z-10">
+                <div className="flex items-center gap-3">
                     <div className="relative group/filter">
-                        <Filter size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-primary/40 group-hover/filter:text-primary transition-colors" />
+                        <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                         <select
                             value={filterStatus}
                             onChange={(e) => setFilterStatus(e.target.value)}
-                            className="bg-black/40 border border-zinc-800 rounded-2xl pl-11 pr-10 py-3 text-[9px] font-black uppercase tracking-[0.3em] outline-none focus:ring-4 focus:ring-primary/10 transition-all appearance-none cursor-pointer text-muted-foreground hover:text-foreground"
+                            className="bg-secondary border border-border rounded-xl pl-9 pr-8 py-2 text-xs font-bold text-foreground outline-none hover:bg-accent transition-all appearance-none cursor-pointer uppercase tracking-tight"
                         >
-                            <option value="all">Full Spectrum</option>
+                            <option value="all">Priority All</option>
                             <option value="Not Started">Standby</option>
                             <option value="In Progress">Active</option>
-                            <option value="Completed">Synchronized</option>
+                            <option value="Completed">Success</option>
                         </select>
-                        <ChevronDown size={12} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground/20" />
+                        <ChevronDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                     </div>
-
                     {canManage && (
-                        <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
+                        <button
                             onClick={() => setIsCreating(!isCreating)}
-                            className="bg-primary text-primary-foreground px-6 py-3 rounded-2xl flex items-center justify-center gap-3 font-black text-[10px] uppercase tracking-[0.25em] shadow-2xl shadow-primary/20 hover:shadow-primary/40 transition-all border border-primary/20"
+                            className="flex items-center gap-2 bg-primary hover:opacity-90 text-primary-foreground px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-lg shadow-primary/20"
                         >
-                            <Plus size={16} /> Deploy Objective
-                        </motion.button>
+                            <Plus size={16} /> New Milestone
+                        </button>
                     )}
                 </div>
             </div>
 
-            {/* Creation Form Overlay */}
             <AnimatePresence>
                 {isCreating && (
                     <motion.div
-                        initial={{ opacity: 0, y: -20, scale: 0.98 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -20, scale: 0.98 }}
-                        className="bg-zinc-900/60 backdrop-blur-3xl border border-primary/20 p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden group/form"
+                        initial={{ opacity: 0, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.98 }}
+                        className="bg-card border border-border/50 p-6 rounded-2xl shadow-xl"
                     >
-                        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
-                        <div className="flex flex-col lg:flex-row items-end gap-6 relative z-10">
-                            <div className="flex-1 space-y-3 w-full">
-                                <label className="text-[9px] font-black uppercase tracking-[0.3em] text-primary/40 ml-4 italic">Objective Designation</label>
-                                <div className="relative">
-                                    <input
-                                        type="text"
-                                        value={name}
-                                        onChange={e => setName(e.target.value)}
-                                        className="w-full bg-black/60 border border-zinc-800 rounded-2xl px-6 py-4 text-xs font-black focus:ring-4 focus:ring-primary/10 transition-all outline-none placeholder:opacity-20 italic italic underline-offset-8 decoration-primary/10"
-                                        placeholder="ENTER OBJECTIVE NAME..."
-                                    />
-                                    <Target size={14} className="absolute right-6 top-1/2 -translate-y-1/2 text-primary/20 group-hover/form:text-primary/40 transition-all" />
-                                </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Milestone Name</label>
+                                <input
+                                    type="text"
+                                    value={name}
+                                    onChange={e => setName(e.target.value)}
+                                    className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-xs font-bold text-foreground outline-none focus:border-primary/50 transition-all"
+                                    placeholder="Enter objective..."
+                                />
                             </div>
-                            <div className="w-full lg:w-64 space-y-3">
-                                <label className="text-[9px] font-black uppercase tracking-[0.3em] text-primary/40 ml-4 italic">Temporal Limit</label>
-                                <div className="relative">
-                                    <input
-                                        type="date"
-                                        value={dueDate}
-                                        onChange={e => setDueDate(e.target.value)}
-                                        className="w-full bg-black/60 border border-zinc-800 rounded-2xl px-6 py-4 text-xs font-black focus:ring-4 focus:ring-primary/10 transition-all outline-none scheme-dark uppercase tracking-widest"
-                                    />
-                                    <Calendar size={14} className="absolute right-6 top-1/2 -translate-y-1/2 text-primary/20 pointer-events-none" />
-                                </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Target Date</label>
+                                <input
+                                    type="date"
+                                    value={dueDate}
+                                    onChange={e => setDueDate(e.target.value)}
+                                    className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-xs font-bold text-foreground outline-none focus:border-primary/50 transition-all"
+                                />
                             </div>
-                            <div className="flex items-center gap-3 w-full lg:w-auto">
-                                <button onClick={handleCreate} className="flex-1 lg:flex-none bg-primary text-primary-foreground px-8 py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] shadow-2xl shadow-primary/20 hover:scale-[1.05] transition-all">Initialize</button>
-                                <button onClick={() => setIsCreating(false)} className="px-6 py-4 text-muted-foreground/40 hover:text-foreground font-black uppercase tracking-[0.2em] text-[10px] transition-colors">Abort</button>
+                            <div className="flex items-end gap-3">
+                                <button onClick={handleCreate} className="flex-1 bg-primary hover:opacity-90 text-primary-foreground h-11 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-primary/20">Create Milestone</button>
+                                <button onClick={() => setIsCreating(false)} className="px-6 h-11 text-muted-foreground hover:text-foreground text-xs font-bold transition-colors">Cancel</button>
                             </div>
                         </div>
                     </motion.div>
                 )}
             </AnimatePresence>
 
-            {/* Timeline UI */}
-            <div className="relative space-y-24 before:absolute before:inset-0 before:ml-[1.75rem] before:h-full before:w-[2px] before:bg-linear-to-b before:from-transparent before:via-zinc-800 before:to-transparent lg:before:left-1/2 lg:before:ml-0 lg:before:-translate-x-1/2">
-
+            <div className="relative pt-4 pl-4 border-l border-border/50 ml-2 space-y-12">
                 {filteredMilestones.length === 0 ? (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="text-center py-32 bg-zinc-900/20 border border-dashed border-zinc-800/50 rounded-[4rem] relative overflow-hidden"
-                    >
-                        <div className="absolute inset-0 bg-primary/5 blur-[120px]" />
-                        <Flag size={48} className="text-muted-foreground/10 mx-auto mb-6 transform -rotate-12" />
-                        <p className="font-black text-xs uppercase tracking-[0.4em] text-muted-foreground/20 italic mb-2">Neural Path Empty</p>
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/10">Awaiting strategic deployment commands...</p>
-                    </motion.div>
+                    <div className="py-20 text-center opacity-40">
+                        <Flag size={32} className="mx-auto mb-4" />
+                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">No milestones found.</p>
+                    </div>
                 ) : (
-                    <div className="space-y-32">
-                        {filteredMilestones.map((m, idx) => {
-                            const isCompleted = m.status === 'Completed';
-                            const urgency = getDueDateUrgency(m.dueDate, m.status);
-                            const isOdd = idx % 2 !== 0;
+                    filteredMilestones.map((m, idx) => {
+                        const isCompleted = m.status === 'Completed';
+                        const urgency = getDueDateUrgency(m.dueDate, m.status);
 
-                            return (
-                                <motion.div
-                                    key={m.id}
-                                    initial={{ opacity: 0, y: 50, scale: 0.95 }}
-                                    whileInView={{ opacity: 1, y: 0, scale: 1 }}
-                                    viewport={{ once: true, margin: "-100px" }}
-                                    transition={{ duration: 0.8, ease: "circOut", delay: idx * 0.05 }}
-                                    className={cn(
-                                        "relative flex flex-col lg:flex-row items-center justify-between lg:justify-normal gap-12 group",
-                                        isOdd && "lg:flex-row-reverse"
-                                    )}
-                                >
-                                    {/* Timeline Node */}
-                                    <div className={cn(
-                                        "absolute top-0 left-0 lg:left-1/2 lg:-translate-x-1/2 w-14 h-14 rounded-[2rem] border-4 border-[#09090b] shadow-2xl z-20 flex items-center justify-center transition-all duration-700 group-hover:scale-125 group-hover:rotate-[360deg] group-hover:border-primary/50",
-                                        isCompleted ? "bg-emerald-500 text-black shadow-emerald-500/20" : "bg-zinc-950 text-primary border-zinc-800 group-hover:bg-primary group-hover:text-primary-foreground"
-                                    )}>
-                                        {isCompleted ? <Check size={24} strokeWidth={3} /> : <Zap size={24} className={m.status === 'In Progress' ? 'animate-pulse' : ''} />}
-                                        <div className="absolute inset-0 rounded-[2rem] bg-current opacity-0 group-hover:opacity-20 blur-xl transition-opacity" />
-                                    </div>
+                        return (
+                            <motion.div
+                                key={m.id}
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: idx * 0.05 }}
+                                className="relative flex flex-col gap-4 group"
+                            >
+                                {/* Timeline Dot */}
+                                <div className={cn(
+                                    "absolute -left-[21px] top-4 w-2.5 h-2.5 rounded-full border-2 border-background z-10 shadow-sm",
+                                    isCompleted ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" : m.status === 'In Progress' ? "bg-primary shadow-[0_0_8px_rgba(var(--primary),0.4)]" : "bg-muted-foreground"
+                                )} />
 
-                                    {/* Content Card */}
-                                    <div className={cn(
-                                        "w-[calc(100%-4rem)] ml-16 lg:ml-0 lg:w-[calc(50%-4rem)] p-8 bg-zinc-900/40 backdrop-blur-3xl border rounded-[3rem] shadow-2xl transition-all duration-700 relative overflow-hidden group/card",
-                                        isCompleted ? "border-emerald-500/20 shadow-emerald-500/5 hover:border-emerald-500/40" :
-                                            urgency.label === 'Overdue' ? "border-rose-500/30 bg-rose-500/5" :
-                                                "border-zinc-800/80 hover:border-primary/30"
-                                    )}>
-                                        {/* Status & Urgency Header */}
-                                        <div className="flex flex-wrap items-center justify-between gap-4 mb-8 relative z-10">
-                                            <div className={cn(
-                                                "px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.25em] border backdrop-blur-3xl shadow-lg",
-                                                isCompleted ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20 shadow-emerald-500/10" :
-                                                    m.status === 'In Progress' ? "bg-sky-500/10 text-sky-500 border-sky-500/20 shadow-sky-500/10" :
-                                                        "bg-white/5 text-muted-foreground/30 border-white/5"
+                                <div className={cn(
+                                    "p-6 rounded-2xl border transition-all duration-300",
+                                    isCompleted ? "bg-emerald-500/5 border-emerald-500/20 shadow-sm" :
+                                        urgency.label === 'Overdue' ? "bg-destructive/5 border-destructive/20 shadow-sm" :
+                                            "bg-card/40 border-border group-hover:border-primary/30 shadow-sm hover:shadow-md"
+                                )}>
+                                    <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+                                        <div className="flex items-center gap-3">
+                                            <span className={cn(
+                                                "px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border",
+                                                isCompleted ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" :
+                                                    m.status === 'In Progress' ? "bg-primary/10 text-primary border-primary/20" :
+                                                        "bg-secondary text-muted-foreground border-border"
                                             )}>
-                                                {m.status === 'Not Started' ? 'Standby' : m.status === 'In Progress' ? 'Active Matrix' : 'Synchronized'}
-                                            </div>
-
+                                                {m.status}
+                                            </span>
                                             {urgency.label && (
-                                                <div className={cn(
-                                                    "flex items-center gap-2 px-4 py-1.5 rounded-2xl text-[9px] font-black uppercase tracking-[0.25em] shadow-lg",
-                                                    urgency.bg, urgency.color, urgency.shadow
+                                                <span className={cn(
+                                                    "flex items-center gap-1.5 px-2 py-0.5 rounded text-[9px] font-black uppercase border tracking-widest",
+                                                    urgency.color, urgency.bg, "border-current/10"
                                                 )}>
-                                                    {urgency.label === 'Overdue' ? <AlertTriangle size={12} className="animate-pulse" /> : <Clock size={12} />}
+                                                    <Clock size={10} />
                                                     {urgency.label}
-                                                </div>
+                                                </span>
                                             )}
                                         </div>
-
-                                        {/* Milestone Identity */}
-                                        <div className="relative z-10 space-y-2 mb-10">
-                                            <h3 className="text-xl font-black tracking-tighter italic uppercase group-hover/card:text-primary transition-colors decoration-primary/20 underline-offset-8 group-hover/card:underline">
-                                                {m.name}
-                                            </h3>
-                                            <p className="text-[8px] font-black text-muted-foreground/20 uppercase tracking-[0.4em] italic flex items-center gap-2 group-hover/card:text-muted-foreground/40 transition-colors">
-                                                <Target size={10} /> Neural Reference Point {idx + 1}
-                                            </p>
-                                        </div>
-
-                                        {/* Progress Interface */}
-                                        <div className="space-y-4 mb-10 relative z-10">
-                                            <div className="flex justify-between items-end">
-                                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/20 italic group-hover/card:text-muted-foreground/40 transition-colors">Efficiency Sync</span>
-                                                <span className={cn("text-xl font-black tracking-tighter italic", isCompleted ? "text-emerald-500" : "text-primary")}>
-                                                    {m.progress}%
-                                                </span>
-                                            </div>
-                                            <div className="w-full h-3 bg-black border border-white/5 rounded-full overflow-hidden shadow-inner p-0.5">
-                                                <motion.div
-                                                    initial={{ width: 0 }}
-                                                    whileInView={{ width: `${m.progress}%` }}
-                                                    transition={{ duration: 1.5, ease: "circOut" }}
-                                                    className={cn(
-                                                        "h-full rounded-full relative overflow-hidden",
-                                                        isCompleted ? "bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]" :
-                                                            urgency.label === 'Overdue' ? "bg-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.3)]" :
-                                                                "bg-linear-to-r from-primary/20 via-primary/60 to-primary shadow-[0_0_15px_rgba(var(--color-primary-rgb),0.3)]"
-                                                    )}
-                                                >
-                                                    {!isCompleted && (
-                                                        <motion.div
-                                                            animate={{ x: ['-100%', '200%'] }}
-                                                            transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-                                                            className="absolute inset-0 bg-linear-to-r from-transparent via-white/40 to-transparent w-1/2 skew-x-[-20deg]"
-                                                        />
-                                                    )}
-                                                </motion.div>
-                                            </div>
-                                        </div>
-
-                                        {/* Dynamic Controls */}
-                                        {!isCompleted && canManage && (
-                                            <div className="grid grid-cols-2 gap-4 pt-10 border-t border-white/5 relative z-10">
+                                        {canManage && !isCompleted && (
+                                            <div className="flex items-center gap-2">
                                                 <button
                                                     onClick={() => updateStatus(m.id, 'In Progress', 50)}
-                                                    className={cn(
-                                                        "flex items-center justify-center gap-3 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-xl group/btn overflow-hidden relative",
-                                                        m.status === 'In Progress' ? "bg-zinc-950 text-muted-foreground/20 border border-zinc-900 cursor-not-allowed" : "bg-white/5 hover:bg-white/10 text-foreground/40 hover:text-foreground border border-white/5"
-                                                    )}
-                                                    disabled={m.status === 'In Progress'}
+                                                    className="p-2 hover:bg-accent rounded-lg text-muted-foreground hover:text-foreground transition-all border border-transparent hover:border-border shadow-xs"
+                                                    title="Mark as Current"
                                                 >
-                                                    <ArrowUpRight size={14} className="group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1 transition-transform" />
-                                                    {m.status === 'In Progress' ? 'Locked' : 'Initiate'}
+                                                    <Target size={14} />
                                                 </button>
                                                 <button
                                                     onClick={() => updateStatus(m.id, 'Completed', 100)}
-                                                    className="flex items-center justify-center gap-3 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.25em] bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-black border border-emerald-500/20 transition-all shadow-xl shadow-emerald-500/5 group/btn"
+                                                    className="p-2 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-500 hover:text-white rounded-lg transition-all border border-emerald-500/20 shadow-xs"
+                                                    title="Mark as Done"
                                                 >
-                                                    <Check size={14} strokeWidth={4} className="group-hover/btn:scale-125 transition-transform" />
-                                                    Synchronize
-                                                </button>
-                                                <button
-                                                    onClick={() => setReminder(m)}
-                                                    className="col-span-2 flex items-center justify-center gap-3 py-3 rounded-2xl bg-black/40 text-muted-foreground/20 hover:text-primary border border-white/5 hover:border-primary/20 transition-all text-[9px] font-black uppercase tracking-[0.3em] group/btn"
-                                                >
-                                                    <Clock size={12} className="group-hover/btn:rotate-[360deg] transition-transform duration-700" />
-                                                    Register Temporal Beacon
+                                                    <Check size={14} />
                                                 </button>
                                             </div>
                                         )}
+                                    </div>
 
-                                        {/* Card Decoration */}
-                                        <div className="absolute top-0 right-0 p-8 opacity-5 group-hover/card:opacity-10 transition-opacity">
-                                            <Flag size={80} className="transform rotate-12" />
+                                    <div className="space-y-4">
+                                        <div>
+                                            <h3 className="text-base font-black text-foreground mb-1 group-hover:text-primary transition-colors uppercase tracking-tight leading-tight">{m.name}</h3>
+                                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Phase Objective {idx + 1}</p>
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-wider">
+                                                <span className="text-muted-foreground">Execution Progress</span>
+                                                <span className={isCompleted ? 'text-emerald-500' : 'text-foreground'}>{m.progress}%</span>
+                                            </div>
+                                            <div className="h-2 w-full bg-secondary rounded-full overflow-hidden border border-border/30 shadow-inner">
+                                                <motion.div
+                                                    initial={{ width: 0 }}
+                                                    animate={{ width: `${m.progress}%` }}
+                                                    className={cn(
+                                                        "h-full rounded-full transition-all",
+                                                        isCompleted ? "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]" :
+                                                            urgency.label === 'Overdue' ? "bg-destructive shadow-[0_0_10px_rgba(var(--destructive),0.3)]" :
+                                                                "bg-primary shadow-[0_0_10px_rgba(var(--primary),0.3)]"
+                                                    )}
+                                                />
+                                            </div>
                                         </div>
                                     </div>
-                                </motion.div>
-                            );
-                        })}
-                    </div>
+                                </div>
+                            </motion.div>
+                        );
+                    })
                 )}
             </div>
         </div>

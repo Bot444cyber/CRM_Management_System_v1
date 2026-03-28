@@ -51,7 +51,7 @@ function ProjectsLayoutContent({ children }: { children: React.ReactNode }) {
         <div className="flex h-screen bg-background overflow-hidden selection:bg-primary/20">
             <ProjectSidebar />
             <div className="flex-1 flex flex-col min-w-0">
-                <main className="flex-1 overflow-hidden relative custom-scrollbar bg-background/30">
+                <main className="flex-1 overflow-y-auto relative custom-scrollbar bg-background/30">
                     {children}
                 </main>
             </div>

@@ -8,6 +8,13 @@
       "when": 1774521196500,
       "tag": "0000_free_power_man",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1774714884780,
+      "tag": "0001_perpetual_moira_mactaggert",
+      "breakpoints": true
     }
   ]
 }

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { Toaster } from "react-hot-toast";
+import { Toaster as HotToaster } from "react-hot-toast";
+import { Toaster as SonnerToaster } from "sonner";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import "./globals.css";
 
@@ -40,7 +41,7 @@ export default function RootLayout({
           <SyncProvider>
             {children}
           </SyncProvider>
-          <Toaster
+          <HotToaster
             position="top-center"
             toastOptions={{
               duration: 4000,
@@ -67,6 +68,7 @@ export default function RootLayout({
               },
             }}
           />
+          <SonnerToaster richColors position="bottom-right" theme="dark" />
         </ThemeProvider>
       </body>
     </html>

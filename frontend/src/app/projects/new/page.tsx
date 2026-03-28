@@ -10,6 +10,8 @@ import { useWorkspace } from '@/context/WorkspaceContext';
 import { cn } from '@/lib/utils';
 import { apiFetch } from '@/lib/apiFetch';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { useSidebar } from '@/context/SidebarContext';
+import { Menu } from 'lucide-react';
 
 export default function NewProjectPage() {
     const router = useRouter();
@@ -28,6 +30,7 @@ export default function NewProjectPage() {
     const [creatingWs, setCreatingWs] = useState(false);
 
     const { activeWorkspace, setActiveWorkspace } = useWorkspace();
+    const { setIsMobileOpen } = useSidebar();
 
     useEffect(() => {
         if (activeWorkspace) {
@@ -46,7 +49,6 @@ export default function NewProjectPage() {
             if (wsRes.ok) {
                 const wsData = await wsRes.json();
                 if (wsData && wsData.length > 0) {
-                    // Pre-select first available if none active
                     setWorkspaceId(wsData[0].id);
                     setActiveWorkspace(wsData[0]);
                 } else {
@@ -115,23 +117,25 @@ export default function NewProjectPage() {
     };
 
     return (
-        <div className="bg-background/50 h-full overflow-y-auto custom-scrollbar flex flex-col">
-            {/* Standardized Compact Header */}
-            <header className="sticky top-0 z-50 bg-black/40 backdrop-blur-3xl border-b border-white/5 px-6 md:px-10 py-1 flex items-center justify-between gap-8 h-12">
-                <div className="flex items-center gap-6 min-w-0">
-                    <div className="flex items-center gap-3 shrink-0">
-                        <div className="w-6 h-6 bg-primary/10 rounded-md border border-primary/20 flex items-center justify-center">
-                            <Plus size={12} className="text-primary" />
+        <div className="bg-background h-full overflow-hidden flex flex-col">
+            {/* Standardized Header */}
+            <header className="h-16 border-b border-border bg-card/80 backdrop-blur-xl px-6 flex items-center justify-between shrink-0 z-50 shadow-sm">
+                <div className="flex items-center gap-6">
+                    <button onClick={() => setIsMobileOpen(true)} className="lg:hidden p-2 -ml-2 text-muted-foreground hover:text-foreground transition-all shrink-0">
+                        <Menu size={18} />
+                    </button>
+                    <div className="flex items-center gap-4 shrink-0">
+                        <div className="w-9 h-9 bg-secondary border border-border rounded-xl flex items-center justify-center shadow-xs">
+                            <Plus size={16} className="text-primary" />
                         </div>
-                        <h1 className="text-xs font-black tracking-tight text-foreground uppercase italic truncate max-w-[200px]">
+                        <h1 className="text-sm font-black tracking-tight text-foreground uppercase leading-none">
                             Initialize Initiative
                         </h1>
                     </div>
                 </div>
-
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-4">
                     <button
-                        className="h-8 px-4 bg-white/5 text-muted-foreground text-[8px] font-black uppercase tracking-widest rounded-lg hover:bg-white/10 transition-all"
+                        className="h-9 px-6 bg-secondary text-muted-foreground text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-destructive hover:text-white border border-border transition-all shadow-xs"
                         onClick={() => router.push('/projects')}
                     >
                         Abort
@@ -140,151 +144,180 @@ export default function NewProjectPage() {
                 </div>
             </header>
 
-            <div className="max-w-3xl mx-auto px-6 md:px-10 py-12">
-                <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-card/40 border border-white/5 rounded-2xl p-8 shadow-2xl relative overflow-hidden group"
-                >
-                    <div className="flex items-center gap-3 mb-8">
-                        <Terminal size={16} className="text-primary" />
-                        <h2 className="text-xs font-black uppercase tracking-tight italic opacity-40">Project Initialization Protocol</h2>
-                    </div>
+            <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col items-center p-6 md:p-12 relative">
+                <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:40px_40px] pointer-events-none" />
 
-                    {wsError === "MISSING_CONTEXT" ? (
-                        <div className="text-center py-12">
-                            <div className="w-16 h-16 bg-rose-500/10 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                                <AlertCircle size={32} />
+                <div className="max-w-4xl w-full z-10">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.98, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        className="bg-card border border-border/50 rounded-[2.5rem] p-10 md:p-12 shadow-2xl relative overflow-hidden group backdrop-blur-md"
+                    >
+                        <div className="flex items-center gap-3 mb-10">
+                            <div className="p-2 bg-primary/10 rounded-lg text-primary">
+                                <Terminal size={18} />
                             </div>
-                            <h3 className="text-lg font-black uppercase mb-2">No Active Organization</h3>
-                            <p className="text-xs text-muted-foreground mb-8">You must be part of an organization to initialize projects.</p>
-                            <form onSubmit={handleCreateWorkspace} className="max-w-xs mx-auto space-y-4">
-                                <input
-                                    type="text"
-                                    placeholder="Organization Name..."
-                                    value={newWsName}
-                                    onChange={e => setNewWsName(e.target.value)}
-                                    className="w-full bg-black/40 border border-white/5 rounded-lg px-4 py-3 text-xs font-black uppercase shadow-inner outline-none focus:ring-1 focus:ring-primary/20 transition-all"
-                                />
-                                <button
-                                    type="submit"
-                                    disabled={creatingWs}
-                                    className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-black uppercase text-[10px] hover:scale-105 transition-all shadow-lg shadow-primary/20"
-                                >
-                                    {creatingWs ? 'Launching...' : 'Launch Organization'}
-                                </button>
-                            </form>
+                            <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-40">Project Initialization Protocol</h2>
                         </div>
-                    ) : (
-                        <form onSubmit={handleSubmit} className="space-y-8">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <div className="space-y-6">
-                                    <div className="space-y-2">
-                                        <label className="text-[8px] font-black uppercase tracking-widest text-muted-foreground/40 ml-1">Initiative Name</label>
-                                        <input
-                                            type="text"
-                                            required
-                                            placeholder="E.G. PROJECT OMEGA"
-                                            value={formData.name}
-                                            onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                            className="w-full bg-black/40 border border-white/5 rounded-lg px-4 py-3 text-xs font-black uppercase tracking-widest outline-none focus:ring-1 focus:ring-primary/20 transition-all shadow-inner"
-                                        />
-                                    </div>
 
-                                    <div className="space-y-2">
-                                        <label className="text-[8px] font-black uppercase tracking-widest text-muted-foreground/40 ml-1">Strategy Brief</label>
-                                        <textarea
-                                            rows={4}
-                                            placeholder="DEFINE OBJECTIVES..."
-                                            value={formData.description}
-                                            onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                            className="w-full bg-black/40 border border-white/5 rounded-lg px-4 py-3 text-xs font-black uppercase tracking-widest outline-none focus:ring-1 focus:ring-primary/20 transition-all shadow-inner resize-none h-32"
-                                        />
+                        {wsError === "MISSING_CONTEXT" ? (
+                            <div className="text-center py-16 space-y-10">
+                                <div className="space-y-4">
+                                    <div className="w-20 h-20 bg-destructive/10 text-destructive rounded-full flex items-center justify-center mx-auto shadow-2xl shadow-destructive/10 border border-destructive/20 animate-pulse">
+                                        <AlertCircle size={40} />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-black uppercase tracking-tight text-foreground">No Active Sector</h3>
+                                        <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest opacity-60">You must be part of an organization to initialize projects.</p>
                                     </div>
                                 </div>
-
-                                <div className="space-y-6">
-                                    <div className="space-y-2">
-                                        <label className="text-[8px] font-black uppercase tracking-widest text-muted-foreground/40 ml-1">Operation Status</label>
-                                        <select
-                                            defaultValue={"Active"}
-                                            className="w-full bg-black/40 border border-white/5 rounded-lg px-4 py-3 text-xs font-black uppercase tracking-widest outline-none focus:ring-1 focus:ring-primary/20 transition-all shadow-inner"
-                                        >
-                                            <option value="Active">ACTIVE</option>
-                                            <option value="On Hold">ON HOLD</option>
-                                            <option value="Completed">COMPLETED</option>
-                                        </select>
+                                <form onSubmit={handleCreateWorkspace} className="max-w-xs mx-auto space-y-6">
+                                    <div className="space-y-2 text-left">
+                                        <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-40 ml-4">Sector Designation</label>
+                                        <input
+                                            type="text"
+                                            placeholder="ORGANIZATION NAME..."
+                                            value={newWsName}
+                                            onChange={e => setNewWsName(e.target.value)}
+                                            className="w-full bg-secondary/50 border border-border/50 rounded-2xl px-6 py-4 text-xs font-black uppercase tracking-widest shadow-inner outline-none focus:ring-4 focus:ring-primary/5 transition-all text-center"
+                                        />
                                     </div>
+                                    <button
+                                        type="submit"
+                                        disabled={creatingWs}
+                                        className="w-full bg-primary text-primary-foreground py-4 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] hover:scale-105 transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3"
+                                    >
+                                        {creatingWs ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />}
+                                        {creatingWs ? 'LAUNCHING...' : 'LAUNCH SECTOR'}
+                                    </button>
+                                </form>
+                            </div>
+                        ) : (
+                            <form onSubmit={handleSubmit} className="space-y-12">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                                    <div className="space-y-10">
+                                        <div className="space-y-3">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 ml-4">Initiative Name</label>
+                                            <input
+                                                type="text"
+                                                required
+                                                placeholder="E.G. PROJECT OMEGA"
+                                                value={formData.name}
+                                                onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                                className="w-full bg-secondary/50 border border-border/50 rounded-2xl px-6 py-5 text-sm font-black uppercase tracking-[0.1em] outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/50 transition-all shadow-inner"
+                                            />
+                                        </div>
 
-                                    <div className="space-y-2">
-                                        <label className="text-[8px] font-black uppercase tracking-widest text-muted-foreground/40 ml-1">Health Metric</label>
-                                        <div className="grid grid-cols-3 gap-3">
-                                            {['Green', 'Yellow', 'Red'].map(h => (
-                                                <button
-                                                    key={h}
-                                                    type="button"
-                                                    className={cn(
-                                                        "py-3 rounded-lg border text-[8px] font-black uppercase tracking-widest transition-all",
-                                                        'bg-black/20 border-white/5 text-muted-foreground/30 hover:border-white/10'
-                                                    )}
-                                                >
-                                                    {h}
-                                                </button>
-                                            ))}
+                                        <div className="space-y-3">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 ml-4">Strategy Brief</label>
+                                            <textarea
+                                                rows={5}
+                                                placeholder="DEFINE CORE OBJECTIVES..."
+                                                value={formData.description}
+                                                onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                                className="w-full bg-secondary/50 border border-border/50 rounded-2xl px-6 py-5 text-sm font-bold uppercase outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/50 transition-all shadow-inner resize-none h-48 leading-relaxed"
+                                            />
                                         </div>
                                     </div>
 
-                                    <div className="space-y-2">
-                                        <label className="text-[8px] font-black uppercase tracking-widest text-muted-foreground/40 ml-1">Completion Deadline</label>
-                                        <input
-                                            type="date"
-                                            required
-                                            value={formData.deadline}
-                                            onChange={e => setFormData({ ...formData, deadline: e.target.value })}
-                                            className="w-full bg-black/40 border border-white/5 rounded-lg px-4 py-3 text-xs font-black uppercase tracking-widest outline-none focus:ring-1 focus:ring-primary/20 transition-all shadow-inner [color-scheme:dark]"
-                                        />
+                                    <div className="space-y-10">
+                                        <div className="space-y-3">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 ml-4">Operational Status</label>
+                                            <div className="relative">
+                                                <select
+                                                    defaultValue={"Active"}
+                                                    className="w-full bg-secondary/50 border border-border/50 rounded-2xl px-6 py-5 text-sm font-black uppercase tracking-widest outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/50 transition-all shadow-inner appearance-none cursor-pointer"
+                                                >
+                                                    <option value="Active">ACTIVE</option>
+                                                    <option value="On Hold">ON HOLD</option>
+                                                    <option value="Completed">COMPLETED</option>
+                                                </select>
+                                                <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground/30">
+                                                    <TrendingUp size={16} />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 ml-4">Priority Matrix</label>
+                                            <div className="grid grid-cols-3 gap-3">
+                                                {['Low', 'Med', 'High'].map(h => (
+                                                    <button
+                                                        key={h}
+                                                        type="button"
+                                                        className={cn(
+                                                            "py-4 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all",
+                                                            'bg-secondary/30 border-border/50 text-muted-foreground/40 hover:border-primary/30 hover:text-primary'
+                                                        )}
+                                                    >
+                                                        {h}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 ml-4">Final Deadline</label>
+                                            <div className="relative">
+                                                <input
+                                                    type="date"
+                                                    required
+                                                    value={formData.deadline}
+                                                    onChange={e => setFormData({ ...formData, deadline: e.target.value })}
+                                                    className="w-full bg-secondary/50 border border-border/50 rounded-2xl px-6 py-5 text-sm font-black uppercase tracking-widest outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/50 transition-all shadow-inner cursor-pointer"
+                                                />
+                                                <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground/30">
+                                                    <Calendar size={16} />
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            {submitError && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="flex items-start gap-4 p-6 bg-rose-500/10 border border-rose-500/20 rounded-[2rem]"
-                                >
-                                    <AlertCircle size={20} className="text-rose-500 shrink-0 mt-0.5" />
-                                    <p className="text-sm font-black text-rose-500">{submitError}</p>
-                                </motion.div>
-                            )}
+                                {submitError && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="flex items-start gap-4 p-6 bg-destructive/5 border border-destructive/20 rounded-[2rem] shadow-sm"
+                                    >
+                                        <AlertCircle size={20} className="text-destructive shrink-0 mt-0.5" />
+                                        <p className="text-xs font-black text-destructive uppercase tracking-widest leading-relaxed">{submitError}</p>
+                                    </motion.div>
+                                )}
 
-                            <div className="pt-8 border-t border-white/5 flex items-center justify-between">
-                                <div className="hidden md:flex items-center gap-3 text-muted-foreground/20">
-                                    <ShieldCheck size={14} />
-                                    <span className="text-[7px] font-black uppercase tracking-widest">Secure Initialization Protocol v4.0</span>
+                                <div className="pt-12 border-t border-border/50 flex flex-col md:flex-row items-center justify-between gap-8">
+                                    <div className="flex items-center gap-4 text-muted-foreground/20">
+                                        <div className="p-2 bg-secondary rounded-lg">
+                                            <ShieldCheck size={18} />
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-[8px] font-black uppercase tracking-[0.3em]">Secure Init Layer</span>
+                                            <span className="text-[7px] font-bold opacity-60 uppercase">AntiGravity Command Protocol v4.0</span>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        type="submit"
+                                        disabled={loading}
+                                        className="w-full md:w-auto bg-primary text-primary-foreground h-16 px-12 rounded-2xl font-black uppercase tracking-[0.2em] text-xs hover:scale-[1.02] active:scale-95 transition-all shadow-2xl shadow-primary/20 flex items-center justify-center gap-4 group/btn disabled:opacity-50"
+                                    >
+                                        {loading ? (
+                                            <>
+                                                <Loader2 size={20} className="animate-spin" />
+                                                DEPLOYING...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Zap size={20} className="group-hover:rotate-12 transition-transform" />
+                                                DEPLOY INITIATIVE
+                                            </>
+                                        )}
+                                    </button>
                                 </div>
-
-                                <button
-                                    type="submit"
-                                    disabled={loading}
-                                    className="w-full md:w-auto bg-primary text-primary-foreground h-11 px-10 rounded-xl font-black uppercase tracking-widest text-[10px] hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-2"
-                                >
-                                    {loading ? (
-                                        <>
-                                            <Loader2 size={16} className="animate-spin" />
-                                            DEPLOYING...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Zap size={16} />
-                                            DEPLOY INITIATIVE
-                                        </>
-                                    )}
-                                </button>
-                            </div>
-                        </form>
-                    )}
-                </motion.div>
+                            </form>
+                        )}
+                    </motion.div>
+                </div>
             </div>
         </div>
     );

@@ -17,6 +17,7 @@ const settings_routes_1 = __importDefault(require("./routes/settings.routes"));
 const ai_routes_1 = __importDefault(require("./routes/ai.routes"));
 const whatsapp_routes_1 = __importDefault(require("./routes/whatsapp.routes"));
 const pms_routes_1 = __importDefault(require("./routes/pms.routes"));
+const chat_routes_1 = __importDefault(require("./routes/chat.routes"));
 const db_1 = require("./config/db");
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 5000;
@@ -33,6 +34,7 @@ app.use("/api/settings", settings_routes_1.default);
 app.use("/api/ai", ai_routes_1.default);
 app.use("/api/whatsapp", whatsapp_routes_1.default);
 app.use("/api/pms", pms_routes_1.default);
+app.use("/api/chat", chat_routes_1.default);
 app.get("/", (req, res) => {
     res.send("CRM Backend API is running");
 });

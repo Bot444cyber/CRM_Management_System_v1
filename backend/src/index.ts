@@ -13,6 +13,7 @@ import settingsRoutes from "./routes/settings.routes";
 import aiRoutes from "./routes/ai.routes";
 import whatsappRoutes from "./routes/whatsapp.routes";
 import pmsRoutes from "./routes/pms.routes";
+import chatRoutes from "./routes/chat.routes";
 import { poolConnection } from "./config/db";
 
 const app: Express = express();
@@ -32,6 +33,7 @@ app.use("/api/settings", settingsRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/whatsapp", whatsappRoutes);
 app.use("/api/pms", pmsRoutes);
+app.use("/api/chat", chatRoutes);
 
 app.get("/", (req: Request, res: Response) => {
     res.send("CRM Backend API is running");

@@ -1,193 +1,370 @@
 "use client";
 
-import React from 'react';
-import { BarChart3, TrendingUp, Users, Target, Activity, Zap, Shield, Globe, ArrowUpRight, ArrowDownRight, MoreHorizontal, PieChart, Layers } from 'lucide-react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect, useMemo } from 'react';
+import {
+    BarChart3, TrendingUp, Users, Shield, Zap, Globe, PieChart,
+    Layers, ArrowUpRight, ArrowDownRight, Menu, Building2,
+    Activity, Target, Clock, AlertCircle, ChevronRight, Layout,
+    Loader2
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import {
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+    PieChart as RePieChart, Pie, Cell, AreaChart, Area
+} from 'recharts';
+import { useSidebar } from '@/context/SidebarContext';
+import { useWorkspace } from '@/context/WorkspaceContext';
+import { useSync } from '@/context/SyncContext';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import { apiFetch } from '@/lib/apiFetch';
+import { cn } from '@/lib/utils';
+
+// Premium Theme-Aware Color Palette for Charts
+const CHART_COLORS = ['var(--primary)', 'color-mix(in oklch, var(--primary), transparent 25%)', 'color-mix(in oklch, var(--primary), transparent 50%)', 'color-mix(in oklch, var(--primary), transparent 75%)', 'color-mix(in oklch, var(--primary), transparent 90%)'];
+const STATUS_COLORS = {
+    'Active': 'var(--primary)',
+    'Completed': '#3b82f6',
+    'At Risk': 'var(--destructive)',
+    'Pending': 'var(--muted-foreground)'
+};
+
+interface PMSSummary {
+    workspaces: { total: number; list: Array<{ id: string; name: string }> };
+    projects: {
+        total: number;
+        statusDistribution: Array<{ name: string; value: number }>;
+        list: Array<{ id: string; name: string; status: string; workspaceId: string; deadline: string | null }>;
+    };
+    team: {
+        total: number;
+        roleDistribution: Array<{ name: string; value: number }>;
+        list: Array<{ userId: number; role: string; workspaceId: string }>;
+    };
+    activity: Array<{ id: string; type: string; title: string; message: string; time: string; workspaceId: string }>;
+}
 
 export default function AnalyticsPage() {
-    return (
-        <div className="h-full bg-background/50 flex flex-col p-6 md:p-10 space-y-10 overflow-y-auto custom-scrollbar">
+    const { setIsMobileOpen } = useSidebar();
+    const { activeWorkspace } = useWorkspace();
+    const { refreshSignal } = useSync();
+    const [summary, setSummary] = useState<PMSSummary | null>(null);
+    const [loading, setLoading] = useState(true);
 
-            {/* Header / Global KPIs */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <KPICard label="TOTAL WORKSPACE IMPACT" value="$2.4M" change="+12.5%" isPositive icon={<Globe size={18} />} />
-                <KPICard label="PROJECT VELOCITY" value="84%" change="+4.2%" isPositive icon={<Zap size={18} />} />
-                <KPICard label="ACTIVE OPERATIVES" value="128" change="-2.1%" isPositive={false} icon={<Users size={18} />} />
-                <KPICard label="MILESTONE ACCURACY" value="96.8%" change="+0.5%" isPositive icon={<Target size={18} />} />
+    const fetchData = async () => {
+        try {
+            const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pms/analytics/summary`);
+            if (res.ok) setSummary(await res.json());
+        } catch (error) {
+            console.error("Failed to fetch analytics summary:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchData();
+    }, [refreshSignal]);
+
+    const filteredStats = useMemo(() => {
+        if (!summary) return null;
+        if (!activeWorkspace) return summary;
+
+        const wsProjects = summary.projects.list.filter(p => p.workspaceId === activeWorkspace.id);
+        const statusMap = new Map<string, number>();
+        wsProjects.forEach(p => {
+            const status = p.status || 'Active';
+            statusMap.set(status, (statusMap.get(status) || 0) + 1);
+        });
+
+        const wsTeam = summary.team.list.filter(m => m.workspaceId === activeWorkspace.id);
+        const roleMap = new Map<string, number>();
+        const uniqueMembers = new Set<number>();
+        wsTeam.forEach(m => {
+            uniqueMembers.add(m.userId);
+            roleMap.set(m.role, (roleMap.get(m.role) || 0) + 1);
+        });
+
+        const wsActivity = summary.activity.filter(a => a.workspaceId === activeWorkspace.id);
+
+        return {
+            ...summary,
+            projects: {
+                total: wsProjects.length,
+                statusDistribution: Array.from(statusMap.entries()).map(([name, value]) => ({ name, value })),
+                list: wsProjects
+            },
+            team: {
+                total: uniqueMembers.size,
+                roleDistribution: Array.from(roleMap.entries()).map(([name, value]) => ({ name, value })),
+                list: wsTeam
+            },
+            activity: wsActivity
+        };
+    }, [summary, activeWorkspace]);
+
+    if (loading) return (
+        <div className="flex-1 flex items-center justify-center bg-background">
+            <div className="flex flex-col items-center gap-4">
+                <Loader2 size={32} className="animate-spin text-primary" />
+                <p className="text-[11px] font-black text-muted-foreground uppercase tracking-widest animate-pulse">Aggregating Intelligence Nodes...</p>
             </div>
+        </div>
+    );
 
-            {/* Main Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-                {/* Project Health Matrix */}
-                <div className="lg:col-span-2 space-y-6">
-                    <div className="bg-black/40 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden group">
-                        <div className="flex items-center justify-between mb-8 px-2">
-                            <div>
-                                <h3 className="text-xs font-black uppercase tracking-widest flex items-center gap-3 italic">
-                                    <Activity size={16} className="text-primary" />
-                                    Project Health Matrix
-                                </h3>
-                                <p className="text-[8px] font-black text-muted-foreground/30 uppercase tracking-[0.2em] mt-1 ml-7">Real-time status across all mission parameters</p>
-                            </div>
-                            <div className="flex gap-2">
-                                <FilterButton label="Operational" active />
-                                <FilterButton label="At Risk" />
-                            </div>
+    return (
+        <div className="bg-background h-full overflow-hidden flex flex-col">
+            {/* Header */}
+            <header className="h-16 border-b border-border bg-background/80 backdrop-blur-xl px-6 flex items-center justify-between shrink-0 z-50 shadow-sm">
+                <div className="flex items-center gap-6">
+                    <button onClick={() => setIsMobileOpen(true)} className="lg:hidden text-muted-foreground hover:text-foreground transition-colors"><Menu size={18} /></button>
+                    <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-secondary border border-border flex items-center justify-center shadow-xs">
+                            <BarChart3 size={16} className="text-primary" />
                         </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <HealthRow name="Nexus Core Synchronization" health={98} status="operational" />
-                            <HealthRow name="Global Resource Relay" health={72} status="warning" />
-                            <HealthRow name="Identity Matrix Audit" health={94} status="operational" />
-                            <HealthRow name="Legacy System Migration" health={45} status="critical" />
-                            <HealthRow name="Satellite Uplink Protocol" health={88} status="operational" />
-                            <HealthRow name="Cybernetic Bridge V2" health={61} status="warning" />
-                        </div>
-                    </div>
-
-                    {/* Resource Allocation View (Placeholder for Chart) */}
-                    <div className="bg-black/20 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] p-8">
-                        <div className="flex items-center justify-between mb-8 px-2">
-                            <h3 className="text-xs font-black uppercase tracking-widest flex items-center gap-3">
-                                <Layers size={16} className="text-primary" />
-                                Resource Allocation Matrix
-                            </h3>
-                            <ArrowUpRight size={16} className="text-muted-foreground/20" />
-                        </div>
-                        <div className="h-64 flex items-end justify-between gap-2 px-4 pb-4">
-                            {[40, 70, 45, 90, 65, 80, 55, 30, 95, 20].map((h, i) => (
-                                <motion.div
-                                    key={i}
-                                    initial={{ height: 0 }}
-                                    animate={{ height: `${h}%` }}
-                                    transition={{ delay: i * 0.1, type: "spring" }}
-                                    className="flex-1 bg-linear-to-t from-primary/5 to-primary/40 rounded-t-lg border-t border-primary/20 relative group"
-                                >
-                                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-popover border border-white/10 px-2 py-1 rounded text-[8px] font-black opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">{h}% LOAD</div>
-                                </motion.div>
-                            ))}
-                        </div>
-                        <div className="flex justify-between px-4 mt-4">
-                            {['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT'].map(m => (
-                                <span key={m} className="text-[7px] font-black text-muted-foreground/20 italic">{m}</span>
-                            ))}
+                        <div className="flex items-center gap-2 text-sm font-black uppercase tracking-tight">
+                            <span className="text-muted-foreground opacity-60">Analytics</span>
+                            <ChevronRight size={14} className="text-border" />
+                            <span className="text-foreground">{activeWorkspace?.name || 'Global Grid'}</span>
                         </div>
                     </div>
                 </div>
+                <div className="flex items-center gap-6">
+                    <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-secondary/50 border border-border rounded-full shadow-inner">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse" />
+                        <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-80">Real-time Stream</span>
+                    </div>
+                    <ThemeToggle />
+                </div>
+            </header>
 
-                {/* Performance Analytics Sidebar */}
-                <div className="space-y-8">
-                    <div className="bg-black/40 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] p-8">
-                        <h3 className="text-xs font-black uppercase tracking-widest flex items-center gap-3 mb-8">
-                            <Shield size={16} className="text-emerald-500" />
-                            Security Integrity
-                        </h3>
-                        <div className="space-y-6">
-                            <SecurityFactor label="Authorization Flow" value={99.8} />
-                            <SecurityFactor label="Data Encryption" value={100} />
-                            <SecurityFactor label="Threat Neutralization" value={94.5} />
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-8 space-y-8 max-w-7xl mx-auto w-full">
+                {/* KPI Bento Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <KPICard
+                        label="Active Workspaces"
+                        value={summary?.workspaces.total.toString() || "0"}
+                        trend="+2"
+                        isUp={true}
+                        icon={<Building2 size={20} />}
+                    />
+                    <KPICard
+                        label="Target Initiatives"
+                        value={filteredStats?.projects.total.toString() || "0"}
+                        trend="+12%"
+                        isUp={true}
+                        icon={<Target size={20} />}
+                    />
+                    <KPICard
+                        label="Team Headcount"
+                        value={filteredStats?.team.total.toString() || "0"}
+                        trend="-3"
+                        isUp={false}
+                        icon={<Users size={20} />}
+                    />
+                    <KPICard
+                        label="Resource Velocity"
+                        value="98.2%"
+                        trend="+0.4%"
+                        isUp={true}
+                        icon={<Zap size={20} />}
+                    />
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Performance Distribution */}
+                    <div className="lg:col-span-2 bg-card border border-border/50 rounded-2xl p-6 md:p-8 shadow-sm overflow-hidden group hover:shadow-md transition-all">
+                        <div className="flex items-center justify-between mb-8">
+                            <div className="space-y-1">
+                                <h3 className="text-[11px] font-black text-muted-foreground uppercase tracking-widest">Initiative Status Distribution</h3>
+                                <p className="text-[10px] text-muted-foreground font-bold opacity-40 uppercase tracking-tight">Cross-workspace project phase metrics</p>
+                            </div>
+                            <div className="p-2 bg-secondary/50 rounded-lg text-muted-foreground">
+                                <TrendingUp size={16} />
+                            </div>
+                        </div>
+                        <div className="h-64 w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={filteredStats?.projects.statusDistribution || []}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="color-mix(in oklch, var(--foreground), transparent 95%)" vertical={false} />
+                                    <XAxis
+                                        dataKey="name"
+                                        stroke="var(--muted-foreground)"
+                                        fontSize={9}
+                                        fontWeight={900}
+                                        tickLine={false}
+                                        axisLine={false}
+                                        className="uppercase tracking-widest opacity-60"
+                                    />
+                                    <YAxis hide />
+                                    <Tooltip
+                                        cursor={{ fill: 'color-mix(in oklch, var(--foreground), transparent 98%)' }}
+                                        content={({ active, payload }) => {
+                                            if (active && payload?.length) return (
+                                                <div className="bg-card border border-border p-3 rounded-xl shadow-2xl backdrop-blur-md">
+                                                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1.5 opacity-60 border-b border-border/50 pb-1">{payload[0].payload.name}</p>
+                                                    <p className="text-xl font-black text-foreground tracking-tighter">{payload[0].value} <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest ml-1 opacity-60">Units</span></p>
+                                                </div>
+                                            );
+                                            return null;
+                                        }}
+                                    />
+                                    <Bar
+                                        dataKey="value"
+                                        radius={[6, 6, 0, 0]}
+                                        barSize={40}
+                                        activeBar={{ fillOpacity: 1, strokeWidth: 0 }}
+                                    >
+                                        {filteredStats?.projects.statusDistribution.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={(STATUS_COLORS as any)[entry.name] || 'var(--muted)'} fillOpacity={0.8} />
+                                        ))}
+                                    </Bar>
+                                </BarChart>
+                            </ResponsiveContainer>
                         </div>
                     </div>
 
-                    <div className="bg-black/40 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] p-8">
-                        <h3 className="text-xs font-black uppercase tracking-widest flex items-center gap-3 mb-8 px-2">
-                            <TrendingUp size={16} className="text-primary" />
-                            Workspace Efficiency
-                        </h3>
-                        <div className="flex items-center justify-center py-6">
-                            <div className="relative w-40 h-40">
-                                <svg className="w-full h-full transform -rotate-90">
-                                    <circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-white/5" />
-                                    <circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="12" fill="transparent" strokeDasharray="440" strokeDashoffset="44" className="text-primary drop-shadow-[0_0_10px_rgba(var(--color-primary-rgb),0.5)]" />
-                                </svg>
-                                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                    <span className="text-2xl font-black italic">90%</span>
-                                    <span className="text-[7px] font-black text-muted-foreground/40 uppercase tracking-widest leading-none mt-1">Global Health</span>
+                    {/* Authority Matrix */}
+                    <div className="bg-card border border-border/50 rounded-2xl p-6 md:p-8 shadow-sm flex flex-col group hover:shadow-md transition-all">
+                        <div className="flex items-center justify-between mb-8">
+                            <div className="space-y-1">
+                                <h3 className="text-[11px] font-black text-muted-foreground uppercase tracking-widest">Role Distribution</h3>
+                                <p className="text-[10px] text-muted-foreground font-bold opacity-40 uppercase tracking-tight">Personnel allotment matrix</p>
+                            </div>
+                            <div className="p-2 bg-secondary/50 rounded-lg text-muted-foreground">
+                                <Shield size={16} />
+                            </div>
+                        </div>
+                        <div className="flex-1 min-h-[180px] relative">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <RePieChart>
+                                    <Pie
+                                        data={filteredStats?.team.roleDistribution || []}
+                                        innerRadius={65}
+                                        outerRadius={85}
+                                        paddingAngle={5}
+                                        dataKey="value"
+                                        stroke="none"
+                                    >
+                                        {filteredStats?.team.roleDistribution.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} fillOpacity={0.8} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip
+                                        content={({ active, payload }) => {
+                                            if (active && payload?.length) return (
+                                                <div className="bg-card border border-border p-2.5 rounded-xl shadow-xl backdrop-blur-md">
+                                                    <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-60">{payload[0].name}</p>
+                                                    <p className="text-sm font-black text-foreground tracking-tight">{payload[0].value} NODES</p>
+                                                </div>
+                                            );
+                                            return null;
+                                        }}
+                                    />
+                                </RePieChart>
+                            </ResponsiveContainer>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                <span className="text-2xl font-black text-foreground tracking-tighter leading-none">{filteredStats?.team.total}</span>
+                                <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40">Entities</span>
+                            </div>
+                        </div>
+                        <div className="mt-8 space-y-3">
+                            {filteredStats?.team.roleDistribution.slice(0, 4).map((entry, index) => (
+                                <div key={entry.name} className="flex items-center justify-between group/item">
+                                    <div className="flex items-center gap-2.5">
+                                        <div className="w-2 h-2 rounded-full shadow-xs" style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }} />
+                                        <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60 group-hover/item:opacity-100 transition-opacity">{entry.name}</span>
+                                    </div>
+                                    <span className="text-[11px] font-black text-foreground tracking-tight border-b border-border/50 group-hover/item:border-primary/50 transition-all">{entry.value}</span>
                                 </div>
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4 mt-6">
-                            <div className="text-center">
-                                <p className="text-[8px] font-black italic text-emerald-500 leading-none mb-1">OPTIONAL</p>
-                                <p className="text-[7px] font-black text-muted-foreground/30 uppercase tracking-widest">Efficiency</p>
-                            </div>
-                            <div className="text-center">
-                                <p className="text-[8px] font-black italic text-rose-500 leading-none mb-1">CRITICAL</p>
-                                <p className="text-[7px] font-black text-muted-foreground/30 uppercase tracking-widest">At Risk</p>
-                            </div>
+                            ))}
                         </div>
                     </div>
                 </div>
 
+                {/* Recent Activity Feed */}
+                <div className="bg-card/40 border border-border/50 rounded-[2rem] p-8 md:p-10 shadow-sm backdrop-blur-sm">
+                    <div className="flex items-center justify-between mb-10">
+                        <div className="space-y-1">
+                            <h3 className="text-sm font-black text-foreground uppercase tracking-[0.2em] leading-none">Global Sector Stream</h3>
+                            <p className="text-[10px] text-muted-foreground font-bold opacity-40 uppercase tracking-widest pl-0.5">Real-time event monitor across active nodes</p>
+                        </div>
+                        <div className="p-2.5 bg-secondary/50 rounded-xl text-muted-foreground shadow-inner">
+                            <Clock size={16} />
+                        </div>
+                    </div>
+
+                    <div className="space-y-8 relative">
+                        <div className="absolute left-[23px] top-6 bottom-6 w-px bg-border/50 border-l border-dashed border-border/30" />
+                        <AnimatePresence mode='popLayout'>
+                            {filteredStats?.activity.length ? filteredStats.activity.slice(0, 8).map((event, idx) => (
+                                <motion.div
+                                    key={event.id}
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: idx * 0.05 }}
+                                    className="relative flex items-start gap-8 group"
+                                >
+                                    <div className={cn(
+                                        "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border z-10 bg-background shadow-xs transition-all duration-500 group-hover:scale-110 group-hover:shadow-md",
+                                        event.type === 'SUCCESS' ? "border-emerald-500/20 text-emerald-500 shadow-emerald-500/5" :
+                                            event.type === 'CRITICAL' ? "border-destructive/20 text-destructive shadow-destructive/5" :
+                                                "border-border text-muted-foreground"
+                                    )}>
+                                        {event.type === 'SUCCESS' ? <CheckCircle2 size={18} /> : event.type === 'CRITICAL' ? <AlertCircle size={18} /> : <Activity size={18} />}
+                                    </div>
+                                    <div className="flex-1 pb-8 border-b border-border/30 last:border-0 group-hover:border-primary/20 transition-colors">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <h5 className="text-xs font-black text-foreground uppercase tracking-tight leading-none group-hover:text-primary transition-colors">{event.title}</h5>
+                                            <span className="text-[9px] text-muted-foreground font-black uppercase tracking-widest opacity-40 flex items-center gap-1.5 bg-secondary/30 px-2 py-0.5 rounded-full border border-border/50">
+                                                <div className="w-1 h-1 rounded-full bg-primary/40 animate-pulse" />
+                                                Live Node
+                                            </span>
+                                        </div>
+                                        <p className="text-[11px] text-muted-foreground leading-relaxed font-bold uppercase tracking-tight opacity-70 group-hover:opacity-100 transition-opacity max-w-2xl">{event.message}</p>
+                                    </div>
+                                </motion.div>
+                            )) : (
+                                <div className="py-24 flex flex-col items-center opacity-20">
+                                    <Activity size={48} className="text-muted-foreground mb-6" />
+                                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground">Sector Silence Detected</p>
+                                </div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+                </div>
             </div>
         </div>
     );
 }
 
-function KPICard({ label, value, change, isPositive, icon }: { label: string, value: string, change: string, isPositive: boolean, icon: React.ReactNode }) {
+function KPICard({ label, value, trend, isUp, icon }: { label: string, value: string, trend: string, isUp: boolean, icon: React.ReactNode }) {
     return (
-        <div className="bg-black/40 backdrop-blur-3xl border border-white/5 rounded-[2rem] p-6 group hover:bg-black/60 transition-all shadow-xl">
-            <div className="flex items-center justify-between mb-4">
-                <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center text-primary group-hover:bg-primary/10 transition-colors">
+        <div className="bg-card/40 border border-border/50 rounded-2xl p-6 hover:bg-card hover:shadow-lg transition-all group hover:translate-y-[-2px] backdrop-blur-md">
+            <div className="flex items-center justify-between mb-6">
+                <div className="w-11 h-11 rounded-xl bg-secondary/50 border border-border/50 flex items-center justify-center text-muted-foreground group-hover:text-primary group-hover:bg-primary/5 transition-all shadow-inner group-hover:scale-110">
                     {icon}
                 </div>
-                <div className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-black italic ${isPositive ? 'text-emerald-500 bg-emerald-500/10' : 'text-rose-500 bg-rose-500/10'}`}>
-                    {isPositive ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
-                    {change}
+                <div className={cn(
+                    "flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-xs",
+                    isUp ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" : "bg-destructive/10 text-destructive border border-destructive/20"
+                )}>
+                    {isUp ? <ArrowUpRight size={11} /> : <ArrowDownRight size={11} />}
+                    {trend}
                 </div>
             </div>
-            <p className="text-[8px] font-black uppercase tracking-[0.2em] text-muted-foreground/30 mb-1">{label}</p>
-            <h4 className="text-3xl font-black tracking-tighter text-foreground group-hover:scale-105 transition-transform origin-left">{value}</h4>
-        </div>
-    );
-}
-
-function HealthRow({ name, health, status }: { name: string, health: number, status: 'operational' | 'warning' | 'critical' }) {
-    const color = status === 'operational' ? 'text-emerald-500' : status === 'warning' ? 'text-amber-500' : 'text-rose-500';
-    const bgColor = status === 'operational' ? 'bg-emerald-500/10' : status === 'warning' ? 'bg-amber-500/10' : 'bg-rose-500/10';
-
-    return (
-        <div className="p-4 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-between group hover:bg-white/10 transition-all">
-            <div className="flex items-center gap-4 min-w-0">
-                <div className={`w-2 h-2 rounded-full ${color.replace('text', 'bg')} shadow-[0_0_8px_currentColor] shrink-0`} />
-                <h5 className="text-xs font-black uppercase tracking-widest text-foreground/80 truncate">{name}</h5>
-            </div>
-            <div className="flex items-center gap-3 shrink-0">
-                <span className={`text-[9px] font-black font-mono italic ${color}`}>{health}%</span>
-                <div className="w-12 h-1 bg-white/5 rounded-full overflow-hidden">
-                    <div className={`h-full ${color.replace('text', 'bg')}`} style={{ width: `${health}%` }} />
+            <div className="space-y-0.5">
+                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1 opacity-50">{label}</p>
+                <div className="flex items-baseline gap-2">
+                    <span className="text-3xl font-black text-foreground tracking-tighter">{value}</span>
                 </div>
             </div>
         </div>
     );
 }
 
-function SecurityFactor({ label, value }: { label: string, value: number }) {
-    return (
-        <div className="space-y-2">
-            <div className="flex items-center justify-between px-1">
-                <span className="text-[8px] font-black text-muted-foreground/40 uppercase tracking-widest">{label}</span>
-                <span className="text-[9px] font-black italic text-emerald-500">{value}%</span>
-            </div>
-            <div className="h-1 bg-white/5 rounded-full overflow-hidden">
-                <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${value}%` }}
-                    className="h-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"
-                />
-            </div>
-        </div>
-    );
-}
-
-function FilterButton({ label, active }: { label: string, active?: boolean }) {
-    return (
-        <button className={`
-            px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all
-            ${active ? 'bg-primary/20 text-primary border border-primary/20 shadow-inner' : 'text-muted-foreground/20 hover:text-muted-foreground hover:bg-white/5'}
-        `}>
-            {label}
-        </button>
-    );
-}
+const CheckCircle2 = ({ size, className }: { size: number, className?: string }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+        <polyline points="22 4 12 14.01 9 11.01" />
+    </svg>
+);

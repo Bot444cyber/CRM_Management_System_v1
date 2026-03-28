@@ -149,8 +149,8 @@ function LoginContent() {
                 />
 
                 {/* Advanced Gradient Overlays */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#0a0a0a]" />
+                <div className="absolute inset-0 bg-linear-to-t from-black via-black/40 to-transparent" />
+                <div className="absolute inset-0 bg-linear-to-r from-transparent via-transparent to-[#0a0a0a]" />
 
                 {/* Content Overlay */}
                 <div className="relative z-10 p-12 lg:p-16 h-full flex flex-col justify-between">

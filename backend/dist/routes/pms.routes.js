@@ -11,6 +11,7 @@ const team_controller_1 = require("../controllers/team.controller");
 const user_controller_1 = require("../controllers/user.controller");
 const pulse_controller_1 = require("../controllers/pulse.controller");
 const reminder_controller_1 = require("../controllers/reminder.controller");
+const analytics_controller_1 = require("../controllers/analytics.controller");
 const auth_middleware_1 = require("../middlewares/auth.middleware");
 const router = express_1.default.Router();
 // All PMS routes require authentication
@@ -19,12 +20,16 @@ router.use(auth_middleware_1.authenticate);
 router.get("/workspaces", project_controller_1.getWorkspaces);
 router.post("/workspaces", project_controller_1.createWorkspace); // Any authenticated user can create their own workspace
 router.post("/workspaces/join", project_controller_1.joinWorkspace); // Join via pass-key
+router.get("/workspaces/:id/details", project_controller_1.getWorkspace); // Get workspace details
+router.patch("/workspaces/:id", project_controller_1.updateWorkspace); // Update workspace settings
+router.delete("/workspaces/:id", project_controller_1.deleteWorkspace); // Delete workspace
 router.get("/reminders", reminder_controller_1.getAllUserReminders); // Global reminders
 router.get("/workspaces/:id/members", project_controller_1.getWorkspaceMembers); // View workspace members
 router.patch("/workspaces/:id/members/:memberId", project_controller_1.updateWorkspaceMember); // Update workspace member role
 router.delete("/workspaces/:id/members/:memberId", project_controller_1.removeWorkspaceMember); // Remove workspace member
 router.get("/team/global", team_controller_1.getGlobalTeam); // Fetch all unique members across owned/managed workspaces
 router.get("/users/search", user_controller_1.searchUsers); // Search users for member addition
+router.get("/analytics/summary", analytics_controller_1.getPMSSummary); // Aggregated PMS intelligence summary
 // ── Projects ─────────────────────────────────────────────────────────────────
 router.get("/workspaces/:workspaceId", project_controller_1.getProjects); // All roles: view
 router.post("/", (0, auth_middleware_1.authorizeRoles)("admin", "manager", "user"), project_controller_1.createProject); // Any owner can create

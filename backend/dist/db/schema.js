@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.projectReminders = exports.projectPulse = exports.projectJoinRequests = exports.projectInvitations = exports.projectMembers = exports.resourceRequests = exports.projectMilestones = exports.projectInventory = exports.projects = exports.workspaceMembers = exports.workspaces = exports.activityLogs = exports.notifications = exports.customers = exports.analytics = exports.inventories = exports.verificationTokens = exports.oauthAccounts = exports.users = void 0;
+exports.chatMessages = exports.chatChannels = exports.projectReminders = exports.projectPulse = exports.projectJoinRequests = exports.projectInvitations = exports.projectMembers = exports.resourceRequests = exports.projectMilestones = exports.projectInventory = exports.projects = exports.workspaceMembers = exports.workspaces = exports.activityLogs = exports.notifications = exports.customers = exports.analytics = exports.inventories = exports.verificationTokens = exports.oauthAccounts = exports.users = void 0;
 const drizzle_orm_1 = require("drizzle-orm");
 const mysql_core_1 = require("drizzle-orm/mysql-core");
 // Tables
@@ -177,5 +177,19 @@ exports.projectReminders = (0, mysql_core_1.mysqlTable)("project_reminders", {
     message: (0, mysql_core_1.text)("message").notNull(),
     dueDate: (0, mysql_core_1.timestamp)("due_date"),
     isRead: (0, mysql_core_1.boolean)("is_read").default(false),
+    createdAt: (0, mysql_core_1.timestamp)("created_at").default((0, drizzle_orm_1.sql) `CURRENT_TIMESTAMP`),
+});
+exports.chatChannels = (0, mysql_core_1.mysqlTable)("chat_channels", {
+    id: (0, mysql_core_1.varchar)("id", { length: 255 }).primaryKey(),
+    workspaceId: (0, mysql_core_1.varchar)("workspace_id", { length: 255 }).notNull(),
+    name: (0, mysql_core_1.varchar)("name", { length: 255 }).notNull(),
+    type: (0, mysql_core_1.varchar)("type", { length: 50 }).default("public"),
+    createdAt: (0, mysql_core_1.timestamp)("created_at").default((0, drizzle_orm_1.sql) `CURRENT_TIMESTAMP`),
+});
+exports.chatMessages = (0, mysql_core_1.mysqlTable)("chat_messages", {
+    id: (0, mysql_core_1.varchar)("id", { length: 255 }).primaryKey(),
+    channelId: (0, mysql_core_1.varchar)("channel_id", { length: 255 }).notNull(),
+    senderId: (0, mysql_core_1.int)("sender_id").notNull(),
+    content: (0, mysql_core_1.text)("content").notNull(),
     createdAt: (0, mysql_core_1.timestamp)("created_at").default((0, drizzle_orm_1.sql) `CURRENT_TIMESTAMP`),
 });

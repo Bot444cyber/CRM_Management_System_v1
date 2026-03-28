@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.removeWorkspaceMember = exports.updateWorkspaceMember = exports.getWorkspaceMembers = exports.deleteProject = exports.updateProject = exports.getProject = exports.getProjects = exports.createProject = exports.joinWorkspace = exports.createWorkspace = exports.getWorkspaces = void 0;
+exports.removeWorkspaceMember = exports.updateWorkspaceMember = exports.getWorkspaceMembers = exports.deleteProject = exports.updateProject = exports.getProject = exports.getProjects = exports.createProject = exports.deleteWorkspace = exports.updateWorkspace = exports.getWorkspace = exports.joinWorkspace = exports.createWorkspace = exports.getWorkspaces = void 0;
 const db_1 = require("../config/db");
 const schema_1 = require("../db/schema");
 const drizzle_orm_1 = require("drizzle-orm");
@@ -142,6 +142,113 @@ const joinWorkspace = async (req, res) => {
     }
 };
 exports.joinWorkspace = joinWorkspace;
+const getWorkspace = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user?.userId;
+        if (!userId) {
+            res.status(401).json({ message: "Unauthorized" });
+            return;
+        }
+        const wsRows = await db_1.db.select({
+            id: schema_1.workspaces.id,
+            name: schema_1.workspaces.name,
+            description: schema_1.workspaces.description,
+            passKey: schema_1.workspaces.passKey,
+            createdAt: schema_1.workspaces.createdAt,
+            role: schema_1.workspaceMembers.role
+        })
+            .from(schema_1.workspaces)
+            .innerJoin(schema_1.workspaceMembers, (0, drizzle_orm_1.eq)(schema_1.workspaceMembers.workspaceId, schema_1.workspaces.id))
+            .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.workspaces.id, id), (0, drizzle_orm_1.eq)(schema_1.workspaceMembers.userId, userId)))
+            .limit(1);
+        if (!wsRows.length) {
+            res.status(404).json({ message: "Workspace not found or access denied" });
+            return;
+        }
+        res.status(200).json(wsRows[0]);
+    }
+    catch (error) {
+        console.error("Error fetching workspace details:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+exports.getWorkspace = getWorkspace;
+const updateWorkspace = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, description } = req.body;
+        const userId = req.user?.userId;
+        if (!userId) {
+            res.status(401).json({ message: "Unauthorized" });
+            return;
+        }
+        // Only owner can update
+        const membership = await db_1.db.select().from(schema_1.workspaceMembers)
+            .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.workspaceMembers.workspaceId, id), (0, drizzle_orm_1.eq)(schema_1.workspaceMembers.userId, userId), (0, drizzle_orm_1.eq)(schema_1.workspaceMembers.role, 'owner')))
+            .limit(1);
+        if (!membership.length) {
+            res.status(403).json({ message: "Only workspace owners can update settings" });
+            return;
+        }
+        await db_1.db.update(schema_1.workspaces)
+            .set({
+            name: name || undefined,
+            description: description !== undefined ? description : undefined
+        })
+            .where((0, drizzle_orm_1.eq)(schema_1.workspaces.id, id));
+        res.status(200).json({ message: "Workspace updated successfully" });
+    }
+    catch (error) {
+        console.error("Error updating workspace:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+exports.updateWorkspace = updateWorkspace;
+const deleteWorkspace = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user?.userId;
+        if (!userId) {
+            res.status(401).json({ message: "Unauthorized" });
+            return;
+        }
+        // Verify owner
+        const membership = await db_1.db.select().from(schema_1.workspaceMembers)
+            .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.workspaceMembers.workspaceId, id), (0, drizzle_orm_1.eq)(schema_1.workspaceMembers.userId, userId), (0, drizzle_orm_1.eq)(schema_1.workspaceMembers.role, 'owner')))
+            .limit(1);
+        if (!membership.length) {
+            res.status(403).json({ message: "Only workspace owners can delete workspaces" });
+            return;
+        }
+        // Cleanup everything in the workspace
+        // 1. Get all projects
+        const workspaceProjects = await db_1.db.select({ id: schema_1.projects.id }).from(schema_1.projects).where((0, drizzle_orm_1.eq)(schema_1.projects.workspaceId, id));
+        const projectIds = workspaceProjects.map(p => p.id);
+        if (projectIds.length > 0) {
+            // Delete project-related data
+            for (const pid of projectIds) {
+                await db_1.db.delete(schema_1.projectMembers).where((0, drizzle_orm_1.eq)(schema_1.projectMembers.projectId, pid));
+                await db_1.db.delete(schema_1.projectMilestones).where((0, drizzle_orm_1.eq)(schema_1.projectMilestones.projectId, pid));
+                await db_1.db.delete(schema_1.projectPulse).where((0, drizzle_orm_1.eq)(schema_1.projectPulse.projectId, pid));
+                await db_1.db.delete(schema_1.projectInventory).where((0, drizzle_orm_1.eq)(schema_1.projectInventory.projectId, pid));
+                await db_1.db.delete(schema_1.resourceRequests).where((0, drizzle_orm_1.eq)(schema_1.resourceRequests.projectId, pid));
+                await db_1.db.delete(schema_1.projectReminders).where((0, drizzle_orm_1.eq)(schema_1.projectReminders.projectId, pid));
+            }
+            await db_1.db.delete(schema_1.projects).where((0, drizzle_orm_1.eq)(schema_1.projects.workspaceId, id));
+        }
+        // 2. Delete members
+        await db_1.db.delete(schema_1.workspaceMembers).where((0, drizzle_orm_1.eq)(schema_1.workspaceMembers.workspaceId, id));
+        // 3. Delete workspace
+        await db_1.db.delete(schema_1.workspaces).where((0, drizzle_orm_1.eq)(schema_1.workspaces.id, id));
+        res.status(200).json({ message: "Workspace and all associated data deleted successfully" });
+    }
+    catch (error) {
+        console.error("Error deleting workspace:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+exports.deleteWorkspace = deleteWorkspace;
 const createProject = async (req, res) => {
     try {
         const { workspaceId, name, description, deadline } = req.body;
@@ -265,7 +372,19 @@ const getProjects = async (req, res) => {
                     health = "Red";
                 }
             }
-            result.push({ ...prj, health, atRiskCount });
+            // Fetch project members
+            const members = await db_1.db
+                .select({ email: schema_1.users.email })
+                .from(schema_1.projectMembers)
+                .innerJoin(schema_1.users, (0, drizzle_orm_1.eq)(schema_1.projectMembers.userId, schema_1.users.id))
+                .where((0, drizzle_orm_1.eq)(schema_1.projectMembers.projectId, prj.id));
+            result.push({
+                ...prj,
+                health,
+                atRiskCount,
+                projectMembers: members.slice(0, 2).map(m => m.email),
+                totalMemberCount: members.length
+            });
         }
         res.status(200).json(result);
     }

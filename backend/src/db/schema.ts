@@ -227,3 +227,18 @@ export const projectReminders = mysqlTable("project_reminders", {
     createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
+export const chatChannels = mysqlTable("chat_channels", {
+    id: varchar("id", { length: 255 }).primaryKey(),
+    workspaceId: varchar("workspace_id", { length: 255 }).notNull(),
+    name: varchar("name", { length: 255 }).notNull(),
+    type: varchar("type", { length: 50 }).default("public"), 
+    createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const chatMessages = mysqlTable("chat_messages", {
+    id: varchar("id", { length: 255 }).primaryKey(),
+    channelId: varchar("channel_id", { length: 255 }).notNull(),
+    senderId: int("sender_id").notNull(),
+    content: text("content").notNull(),
+    createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+});
