@@ -25,7 +25,7 @@ const integrationsData = [
     // { name: 'Point of Sale', icon: Store, color: 'text-rose-500' },
     // { name: 'Discuss', icon: MessageSquare, color: 'text-yellow-500' },
     // { name: 'Documents', icon: Files, color: 'text-sky-500' },
-    // { name: 'Project', icon: CheckSquare, color: 'text-green-500' },
+    { name: 'Project', icon: CheckSquare, color: 'text-green-500' },
     // { name: 'Timesheets', icon: Clock, color: 'text-blue-400' },
     // { name: 'Field Service', icon: Zap, color: 'text-amber-500' },
     // { name: 'Planning', icon: CalendarDays, color: 'text-violet-500' },
@@ -114,7 +114,7 @@ export default function Integrations() {
                         className="mt-16 sm:mt-24 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8"
                     >
                         <p className="text-white/40 text-sm font-medium">
-                            + 88 more integrations available
+                            More integrations available
                         </p>
                         <div className="hidden sm:block w-px h-4 bg-white/10" />
 
