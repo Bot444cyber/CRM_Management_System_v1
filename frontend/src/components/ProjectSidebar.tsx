@@ -201,6 +201,14 @@ export default function ProjectSidebar() {
                         onClick={() => setIsMobileOpen(false)}
                     />
                     <NavItem
+                        href="/projects/workspaces"
+                        active={pathname === '/projects/workspaces'}
+                        icon={<Globe size={16} />}
+                        label="Global Network"
+                        collapsed={isCollapsed}
+                        onClick={() => setIsMobileOpen(false)}
+                    />
+                    <NavItem
                         href="/projects/team"
                         active={pathname === '/projects/team'}
                         icon={<Users size={16} />}
