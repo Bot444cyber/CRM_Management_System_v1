@@ -56,22 +56,6 @@ export default function AllWorkspacesPage() {
             {/* Content Area */}
             <div className="flex-1 overflow-y-auto custom-scrollbar w-full">
                 <div className="p-6 md:p-8 space-y-12 max-w-7xl mx-auto">
-                    {/* Hero Section */}
-                    <div className="space-y-4">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 border border-primary/20 rounded-full">
-                            <Zap size={10} className="text-primary" />
-                            <span className="text-[9px] font-black text-primary uppercase tracking-widest">Enterprise Hub</span>
-                        </div>
-                        <h2 className="text-4xl md:text-5xl font-black text-foreground tracking-tighter leading-none uppercase">
-                            Global Tactical <br />
-                            <span className="text-muted-foreground opacity-40">Network Nodes</span>
-                        </h2>
-                        <p className="text-sm text-muted-foreground font-medium max-w-2xl leading-relaxed uppercase tracking-tight">
-                            Access and manage all synchronized environments across the Zinc network.
-                            Switch between tactical sectors to monitor performance and mission status.
-                        </p>
-                    </div>
-
                     {/* Stats Summary */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="bg-card/40 border border-border/50 rounded-2xl p-6 backdrop-blur-md shadow-sm">
