@@ -103,10 +103,20 @@ export default function AnalyticsPage() {
     }, [summary, activeWorkspace]);
 
     if (loading) return (
-        <div className="flex-1 flex items-center justify-center bg-background">
-            <div className="flex flex-col items-center gap-4">
-                <Loader2 size={32} className="animate-spin text-primary" />
-                <p className="text-[11px] font-black text-muted-foreground uppercase tracking-widest animate-pulse">Aggregating Intelligence Nodes...</p>
+        <div className="h-full w-full flex flex-col items-center justify-center bg-background min-h-[400px] transition-colors duration-500">
+            <div className="relative mb-8">
+                <div className="w-16 h-16 border-4 border-primary/10 border-t-primary rounded-full animate-spin" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                    <Activity size={24} className="text-primary animate-pulse" />
+                </div>
+            </div>
+            <div className="space-y-2 text-center">
+                <h3 className="text-xs font-black text-foreground uppercase tracking-[0.4em] animate-pulse">
+                    Aggregating Intelligence
+                </h3>
+                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest opacity-40">
+                    Scanning Neural Nodes...
+                </p>
             </div>
         </div>
     );

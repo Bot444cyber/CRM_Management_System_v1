@@ -35,6 +35,25 @@ export function RoleBadge({ role }: { role: string }) {
     );
 }
 
+export const formatName = (name: string | null, email: string) => {
+    if (name) return name;
+    const prefix = email.split('@')[0];
+    return prefix
+        .split(/[._-]/)
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+        .join(' ');
+};
+
+export const getInitials = (nameOrEmail: string) => {
+    if (!nameOrEmail) return '??';
+    const name = nameOrEmail.includes('@') ? nameOrEmail.split('@')[0] : nameOrEmail;
+    const parts = name.split(/[._\s-]/).filter(Boolean);
+    if (parts.length >= 2) {
+        return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return parts[0]?.substring(0, 2).toUpperCase() || '??';
+};
+
 export default function TeamView({ projectId, workspaceId, currentUserRole = 'developer', refresh }: {
     projectId: string;
     workspaceId?: string;
@@ -172,7 +191,6 @@ export default function TeamView({ projectId, workspaceId, currentUserRole = 'de
                     </div>
                     <div>
                         <h2 className="text-lg font-black text-foreground uppercase tracking-tight">Team Matrix</h2>
-                        <p className="text-xs text-muted-foreground opacity-80 uppercase font-black tracking-widest leading-none">Manage project collaborators and workspace access nodes.</p>
                     </div>
                 </div>
                 {canManage && (
@@ -234,8 +252,11 @@ export default function TeamView({ projectId, workspaceId, currentUserRole = 'de
                                                     }}
                                                     className="w-full px-5 py-3.5 text-left hover:bg-accent flex items-center justify-between transition-colors group"
                                                 >
-                                                    <span className="text-xs font-black text-foreground uppercase tracking-tight group-hover:text-primary transition-colors">{user.email}</span>
-                                                    <span className="text-[9px] text-muted-foreground font-black uppercase tracking-widest opacity-40">UPLINK ID: {user.id}</span>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-xs font-black text-foreground uppercase tracking-tight group-hover:text-primary transition-colors">{formatName(user.name, user.email)}</span>
+                                                        <span className="text-[9px] text-muted-foreground font-bold tracking-widest opacity-40 uppercase">{user.email}</span>
+                                                    </div>
+                                                    <span className="text-[9px] text-muted-foreground font-black uppercase tracking-widest opacity-20">UPLINK ID: {user.id}</span>
                                                 </button>
                                             ))}
                                         </motion.div>
@@ -334,14 +355,13 @@ export default function TeamView({ projectId, workspaceId, currentUserRole = 'de
                                     <tr key={m.memberId} className="hover:bg-accent/30 transition-all group/row">
                                         <td className="px-6 py-5">
                                             <div className="flex items-center gap-4">
-                                                <div className="w-11 h-11 rounded-xl bg-secondary border border-border/50 flex items-center justify-center text-primary font-black text-base shadow-inner transition-all group-hover/row:scale-105 group-hover/row:border-primary/30">
-                                                    {m.email?.[0]?.toUpperCase() ?? '?'}
+                                                <div className="w-11 h-11 rounded-xl bg-secondary border border-border/50 flex items-center justify-center text-primary font-black text-xs shadow-inner transition-all group-hover/row:scale-105 group-hover/row:border-primary/30">
+                                                    {getInitials(m.name || m.email)}
                                                 </div>
                                                 <div className="flex flex-col gap-0.5">
-                                                    <span className="text-sm font-black text-foreground uppercase tracking-tight group-hover/row:text-primary transition-colors">{m.email}</span>
+                                                    <span className="text-sm font-black text-foreground uppercase tracking-tight group-hover/row:text-primary transition-colors">{formatName(m.name, m.email)}</span>
                                                     <div className="flex items-center gap-1.5 opacity-40">
-                                                        <Shield size={10} className="text-muted-foreground" />
-                                                        <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">{m.systemRole}</span>
+                                                        <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">{m.email}</span>
                                                     </div>
                                                 </div>
                                             </div>

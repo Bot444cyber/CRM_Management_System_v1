@@ -6,7 +6,7 @@ import { apiFetch } from '@/lib/apiFetch';
 
 const ROLES = [
     { value: 'admin', label: 'Admin', color: 'bg-rose-500/10 text-rose-500 border-rose-500/20' },
-    { value: 'manager', label: 'Manager', color: 'bg-purple-500/10 text-purple-500 border-purple-500/20' },
+    { value: 'manager', label: 'Manager', color: 'bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 border-zinc-500/20' },
     { value: 'team_leader', label: 'Team Leader', color: 'bg-blue-500/10 text-blue-500 border-blue-500/20' },
     { value: 'developer', label: 'Developer', color: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' },
     { value: 'designer', label: 'Designer', color: 'bg-amber-500/10 text-amber-500 border-amber-500/20' },

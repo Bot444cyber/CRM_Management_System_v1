@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
-    Send, Hash, Users, Shield, Zap, Search, Smile, Paperclip,
-    MoreVertical, Phone, Video, Plus, Menu, MessageSquare,
-    Check, CheckCheck, Clock, User
+    Send, Shield, Zap, Search, Plus, MessageSquare,
+    User, Briefcase, BarChart3, Globe2,
+    SmilePlus, CheckCheck, Clock, MoreHorizontal, ChevronLeft, Menu
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
@@ -18,10 +18,11 @@ interface Message {
     id: string;
     channelId: string;
     senderId: number;
+    senderName?: string;
     content: string;
     createdAt: string;
     isOptimistic?: boolean;
-    isGrouped?: boolean;
+    isSeen?: boolean;
 }
 
 interface Channel {
@@ -29,23 +30,92 @@ interface Channel {
     workspaceId: string;
     name: string;
     type: 'public' | 'private' | 'dm';
+    otherMemberName?: string;
+    otherMemberEmail?: string;
+    otherMemberReadAt?: string;
+    lastMessage?: string;
+    lastMessageTime?: string;
+    unreadCount?: number;
+    avatar?: string;
+}
+
+interface WorkspaceMember {
+    id: number;
+    name: string | null;
+    email: string;
+    role: string;
+    isOnline: boolean;
+}
+
+type UserRole = 'Manager' | 'Developer' | 'Customer' | 'Member';
+
+const ROLE_STYLES = {
+    Manager: 'bg-rose-500/10 text-rose-500 border-rose-500/20 shadow-sm shadow-rose-500/5',
+    Developer: 'bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 border-zinc-500/20 shadow-sm shadow-zinc-500/5',
+    Customer: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 shadow-sm shadow-emerald-500/5',
+    Member: 'bg-zinc-800 text-zinc-400 border-zinc-700 shadow-sm',
+};
+
+function formatName(name: string | null, email: string) {
+    if (name && name.trim()) return name;
+    // Fallback: Prettify email prefix
+    const prefix = email.split('@')[0];
+    return prefix
+        .split(/[._-]/)
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+        .join(' ');
 }
 
 export default function ChatPage() {
     const [channels, setChannels] = useState<Channel[]>([]);
+    const [members, setMembers] = useState<WorkspaceMember[]>([]);
     const [activeChannel, setActiveChannel] = useState<Channel | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(true);
-    const [sending, setSending] = useState(false);
+    const [activeTab, setActiveTab] = useState<'sectors' | 'dms'>('sectors');
+    const [isMobileConversationOpen, setIsMobileConversationOpen] = useState(false);
     const { setIsMobileOpen } = useSidebar();
     const { activeWorkspace } = useWorkspace();
+
     const scrollRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-    const currentUser = { id: 1, name: 'Lead Operative' };
-    const POLLING_INTERVAL = 3000;
+    const [currentUser, setCurrentUser] = useState<any>({ id: 0, name: 'Lead Operative' });
+    const POLLING_INTERVAL = 2000;
+
     const [error, setError] = useState<string | null>(null);
+
+    const fetchMe = async () => {
+        try {
+            const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/me`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data.user) {
+                    setCurrentUser({
+                        id: data.user.userId,
+                        name: formatName(data.user.name, data.user.email),
+                        email: data.user.email
+                    });
+                }
+            }
+        } catch (e) {
+            console.error("Failed to fetch profile:", e);
+        }
+    };
+
+    const fetchWorkspaceMembers = async () => {
+        if (!activeWorkspace) return;
+        try {
+            const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/chat/members?workspaceId=${activeWorkspace.id}`);
+            if (res.ok) {
+                const data = await res.json();
+                setMembers(data);
+            }
+        } catch (e) {
+            console.error("Failed to fetch workspace members:", e);
+        }
+    };
 
     const fetchChannels = async () => {
         if (!activeWorkspace) return;
@@ -55,34 +125,57 @@ export default function ChatPage() {
             const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/chat/channels?workspaceId=${activeWorkspace.id}`);
             if (res.ok) {
                 const data = await res.json();
-                setChannels(data);
-                if (data.length > 0) {
-                    if (!activeChannel) setActiveChannel(data[0]);
-                } else {
-                    setLoading(false);
+
+                const enrichedData = data.map((c: any) => {
+                    let label = c.name;
+                    if (c.type === 'dm' && c.otherMemberName) {
+                        label = c.otherMemberName;
+                    }
+                    return {
+                        ...c,
+                        name: label,
+                        otherMemberEmail: c.otherMemberEmail, // Ensure email is passed
+                        lastMessage: c.lastMessage || 'Link established...',
+                        lastMessageTime: c.lastMessageTime || 'Just now',
+                        unreadCount: c.unreadCount || 0,
+                        avatar: c.type === 'dm' ? undefined : `https://api.dicebear.com/7.x/initials/svg?seed=${label}`
+                    };
+                });
+
+                setChannels(enrichedData);
+                if (enrichedData.length > 0 && !activeChannel) {
+                    const general = enrichedData.find((c: any) => c.name.toLowerCase() === 'general');
+                    setActiveChannel(general || enrichedData[0]);
                 }
+            } else if (res.status === 403) {
+                setError("Authorization Required: This sector is restricted.");
             } else {
-                if (res.status === 403) {
-                    setError("Membership Required: Unauthorized personnel detected in this communication sector.");
-                } else {
-                    setError("Failed to initialize secure link. Protocol synchronization failed.");
-                }
-                setLoading(false);
+                setError("Protocol synchronization failed.");
             }
         } catch (e) {
-            console.error("Failed to fetch channels:", e);
             setError("Connection failure: Encryption nodes offline.");
+        } finally {
             setLoading(false);
         }
     };
 
+    const messagesRef = useRef<Message[]>([]);
+    useEffect(() => {
+        messagesRef.current = messages;
+    }, [messages]);
+
     const fetchMessages = async (isPolling = false) => {
         if (!activeChannel) return;
         try {
-            const lastMsg = messages[messages.length - 1];
-            const url = `${process.env.NEXT_PUBLIC_API_URL}/api/chat/messages?channelId=${activeChannel.id}${isPolling && lastMsg ? `&lastTimestamp=${lastMsg.createdAt}` : ''}`;
+            const currentMessages = messagesRef.current;
+            const lastMsg = currentMessages[currentMessages.length - 1];
 
-            const res = await apiFetch(url);
+            const params = new URLSearchParams({ channelId: activeChannel.id });
+            if (isPolling && lastMsg) {
+                params.append('lastTimestamp', lastMsg.createdAt);
+            }
+
+            const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/chat/messages?${params.toString()}`);
             if (res.ok) {
                 const newMessages: Message[] = await res.json();
                 if (newMessages.length > 0) {
@@ -101,8 +194,16 @@ export default function ChatPage() {
     };
 
     useEffect(() => {
-        fetchChannels();
+        if (activeWorkspace) {
+            fetchChannels();
+            fetchWorkspaceMembers();
+            setActiveChannel(null);
+        }
     }, [activeWorkspace]);
+
+    useEffect(() => {
+        fetchMe();
+    }, []);
 
     useEffect(() => {
         if (activeChannel) {
@@ -113,11 +214,23 @@ export default function ChatPage() {
     }, [activeChannel]);
 
     useEffect(() => {
-        const interval = setInterval(() => {
-            fetchMessages(true);
-        }, POLLING_INTERVAL);
-        return () => clearInterval(interval);
-    }, [activeChannel, messages]);
+        const msgInterval = setInterval(() => fetchMessages(true), POLLING_INTERVAL);
+        const memberInterval = setInterval(() => fetchWorkspaceMembers(), 10000);
+
+        // Responsive reset on window resize
+        const handleResize = () => {
+            if (window.innerWidth >= 768) {
+                setIsMobileConversationOpen(false);
+            }
+        };
+        window.addEventListener('resize', handleResize);
+
+        return () => {
+            clearInterval(msgInterval);
+            clearInterval(memberInterval);
+            window.removeEventListener('resize', handleResize);
+        };
+    }, [activeChannel]);
 
     useEffect(() => {
         if (scrollRef.current) {
@@ -133,7 +246,7 @@ export default function ChatPage() {
         if (textareaRef.current) textareaRef.current.style.height = 'auto';
 
         const optimisticMsg: Message = {
-            id: Math.random().toString(36).substr(2, 9),
+            id: `opt-${Math.random().toString(36).substr(2, 9)}`,
             channelId: activeChannel.id,
             senderId: currentUser.id,
             content,
@@ -152,6 +265,8 @@ export default function ChatPage() {
             if (!res.ok) {
                 toast.error("Packet transmission failed");
                 setMessages(prev => prev.filter(m => m.id !== optimisticMsg.id));
+            } else {
+                fetchMessages(true);
             }
         } catch (e) {
             toast.error("Network instability detected");
@@ -159,10 +274,28 @@ export default function ChatPage() {
         }
     };
 
-    const handleInputResize = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        setInput(e.target.value);
-        e.target.style.height = 'auto';
-        e.target.style.height = `${e.target.scrollHeight}px`;
+    const startDirectMessage = async (memberId: number, memberEmail: string) => {
+        if (memberId === currentUser.id) return;
+        try {
+            const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/chat/dm`, {
+                method: 'POST',
+                body: JSON.stringify({ workspaceId: activeWorkspace?.id, targetUserId: memberId })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                await fetchChannels();
+                setActiveChannel({
+                    id: data.id,
+                    workspaceId: activeWorkspace?.id || '',
+                    name: formatName(null, memberEmail),
+                    otherMemberEmail: memberEmail,
+                    type: 'dm',
+                    avatar: undefined
+                });
+            }
+        } catch (e) {
+            toast.error("Failed to establish direct link");
+        }
     };
 
     const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -173,304 +306,414 @@ export default function ChatPage() {
     };
 
     if (loading && !activeChannel) return (
-        <div className="flex-1 flex flex-col items-center justify-center bg-background">
-            <div className="w-12 h-12 border-2 border-primary/20 border-t-primary rounded-full animate-spin mb-6" />
-            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] text-center animate-pulse">
-                Synchronizing Neural Link...
-            </p>
+        <div className="h-full w-full flex flex-col items-center justify-center bg-background transition-colors duration-500">
+            <div className="relative mb-8">
+                <div className="w-16 h-16 border-4 border-primary/10 border-t-primary rounded-full animate-spin" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                    <Zap size={24} className="text-primary animate-pulse" />
+                </div>
+            </div>
+            <div className="space-y-2 text-center">
+                <h3 className="text-xs font-black text-foreground uppercase tracking-[0.4em] animate-pulse">
+                    Initializing Secure Grid
+                </h3>
+                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest opacity-40">
+                    Synchronizing Encryption Nodes...
+                </p>
+            </div>
         </div>
     );
 
     if (error) return (
-        <div className="flex-1 flex flex-col items-center justify-center bg-background p-10 text-center">
-            <div className="w-20 h-20 rounded-[2rem] bg-destructive/5 border border-destructive/20 flex items-center justify-center mb-8 shadow-2xl shadow-destructive/10">
+        <div className="h-full w-full flex flex-col items-center justify-center bg-background p-10 text-center transition-colors duration-500">
+            <div className="w-20 h-20 rounded-[2.5rem] bg-destructive/5 border border-destructive/20 flex items-center justify-center mb-8 shadow-2xl shadow-destructive/10">
                 <Shield size={32} className="text-destructive" />
             </div>
-            <h3 className="text-sm font-black uppercase tracking-[0.2em] text-foreground mb-3 leading-none">Access Synchronization Breach</h3>
+            <h3 className="text-sm font-black uppercase tracking-[0.2em] text-foreground mb-3 leading-none">Authorization Breach</h3>
             <p className="text-[11px] text-muted-foreground max-w-sm leading-relaxed mb-8 uppercase font-bold tracking-tight opacity-70">
                 {error}
             </p>
             <button
                 onClick={() => fetchChannels()}
-                className="px-8 py-3 bg-secondary hover:bg-accent text-foreground text-[10px] font-black uppercase tracking-widest rounded-xl border border-border transition-all shadow-sm hover:translate-y-[-1px]"
+                className="px-10 py-4 bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-widest rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/20"
             >
-                Retry Authorization
+                Retry Uplink
             </button>
         </div>
     );
 
     return (
-        <div className="bg-background h-full overflow-hidden flex flex-col">
-            {/* Professional Header */}
-            <header className="h-16 border-b border-border bg-card/80 backdrop-blur-xl px-6 flex items-center justify-between shrink-0 z-50 shadow-sm">
-                <div className="flex items-center gap-6">
-                    <button onClick={() => setIsMobileOpen(true)} className="lg:hidden text-muted-foreground hover:text-foreground transition-all"><Menu size={18} /></button>
-                    <div className="flex items-center gap-4">
-                        <div className="w-9 h-9 rounded-xl bg-secondary border border-border flex items-center justify-center shadow-xs">
-                            <MessageSquare size={16} className="text-primary" />
-                        </div>
-                        <div className="flex flex-col gap-0.5">
-                            <h1 className="text-sm font-black text-foreground flex items-center gap-2 leading-none uppercase tracking-tight">
-                                Communication Grid
-                                {activeWorkspace && <span className="text-[9px] bg-primary/10 text-primary px-2 py-0.5 rounded-lg font-black border border-primary/20 uppercase tracking-widest ml-1">{activeWorkspace.name}</span>}
-                            </h1>
-                            <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest opacity-60">Real-time collaboration node encryption active</p>
-                        </div>
-                    </div>
-                </div>
-                <ThemeToggle />
-            </header>
-
-            <div className="flex-1 flex overflow-hidden">
-                {/* Channels Sidebar */}
-                <aside className="w-64 border-r border-border bg-secondary/20 hidden md:flex flex-col backdrop-blur-sm">
-                    <div className="p-5 border-b border-border/50 flex items-center justify-between">
-                        <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-60">Sectors</h2>
-                        <button className="p-1.5 hover:bg-primary/10 hover:text-primary text-muted-foreground rounded-lg transition-all shadow-xs border border-transparent hover:border-primary/20">
-                            <Plus size={14} />
+        <div className="bg-background h-dvh md:h-full overflow-hidden flex transition-colors duration-500">
+            {/* Middle Sidebar: Chat List */}
+            <aside className={cn(
+                "w-full md:w-80 border-r border-border bg-background flex flex-col shrink-0 z-40 bg-linear-to-b from-background to-accent/20 transition-colors duration-500",
+                isMobileConversationOpen ? "hidden md:flex" : "flex"
+            )}>
+                <div className="p-6 pb-2">
+                    <div className="flex items-center gap-3 mb-6">
+                        <button
+                            onClick={() => setIsMobileOpen(true)}
+                            className="lg:hidden p-2 -ml-2 text-muted-foreground hover:text-primary transition-all"
+                        >
+                            <Menu size={20} />
+                        </button>
+                        <h2 className="text-2xl font-black text-foreground tracking-tight flex-1">Messages</h2>
+                        <button className="w-8 h-8 rounded-full bg-accent/50 border border-border flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/30 transition-all shadow-sm shrink-0">
+                            <Plus size={16} />
                         </button>
                     </div>
-
-                    <div className="flex-1 overflow-y-auto p-4 space-y-8 custom-scrollbar">
-                        <div className="space-y-1">
-                            {channels.length > 0 ? channels.map(chan => (
-                                <button
-                                    key={chan.id}
-                                    onClick={() => setActiveChannel(chan)}
-                                    className={cn(
-                                        "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-300 group text-left shadow-xs border border-transparent",
-                                        activeChannel?.id === chan.id
-                                            ? "bg-primary text-primary-foreground font-black shadow-lg shadow-primary/20 scale-[1.02]"
-                                            : "text-muted-foreground hover:bg-secondary hover:text-foreground hover:border-border/50"
-                                    )}
-                                >
-                                    <Hash size={14} className={cn("shrink-0 transition-transform group-hover:rotate-12", activeChannel?.id === chan.id ? "text-primary-foreground" : "text-muted-foreground/40 group-hover:text-primary/60")} />
-                                    <span className="text-[11px] font-black uppercase tracking-tight truncate">{chan.name}</span>
-                                </button>
-                            )) : (
-                                <div className="px-4 py-6 text-center border border-dashed border-border/50 rounded-2xl bg-secondary/10">
-                                    <p className="text-[9px] text-muted-foreground/60 font-black uppercase tracking-widest">No Active Sectors</p>
-                                </div>
-                            )}
-                        </div>
-
-                        <div>
-                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-40 mb-4 px-2">Active Entities</p>
-                            <div className="space-y-1">
-                                <UserItem name="Agent Alpha" online />
-                                <UserItem name="Vector Sync" online />
-                                <UserItem name="Lead Operative" online isSelf />
-                                <UserItem name="Static Observer" />
-                            </div>
-                        </div>
+                    {/* Search Bar */}
+                    <div className="relative mb-6">
+                        <input
+                            type="text"
+                            placeholder="Search sectors..."
+                            className="w-full bg-accent/20 border border-border/80 rounded-xl py-2.5 pl-9 pr-4 text-xs font-medium text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all focus:bg-accent/40 shadow-inner"
+                        />
                     </div>
-                </aside>
+                    {/* Tabs */}
+                    <div className="flex gap-2 bg-accent/30 p-1 rounded-xl border border-border/50">
+                        <button
+                            onClick={() => setActiveTab('sectors')}
+                            className={cn(
+                                "flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all border border-transparent shadow-xs active:scale-95",
+                                activeTab === 'sectors' ? "bg-card text-foreground border-border shadow-sm ring-1 ring-border/5" : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
+                            )}
+                        >
+                            Sectors
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('dms')}
+                            className={cn(
+                                "flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all border border-transparent",
+                                activeTab === 'dms' ? "bg-card text-foreground border-border shadow-sm ring-1 ring-border/5" : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
+                            )}
+                        >
+                            Direct
+                        </button>
+                    </div>
+                </div>
 
-                {/* Main Chat Area */}
-                <main className="flex-1 flex flex-col min-w-0 bg-background relative">
-                    <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:40px_40px] pointer-events-none" />
-
-                    {activeChannel ? (
-                        <>
-                            {/* Chat Header */}
-                            <header className="h-16 border-b border-border px-8 flex items-center justify-between shrink-0 bg-card/40 backdrop-blur-md">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center text-primary/60 border border-border shadow-inner">
-                                        <Hash size={18} />
-                                    </div>
-                                    <div className="flex flex-col gap-0.5">
-                                        <h2 className="text-base font-black text-foreground uppercase tracking-tight leading-none">{activeChannel.name}</h2>
-                                        <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest opacity-40 leading-none">
-                                            {messages.length} packets synchronized over secure uplink
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <HeaderAction icon={<Search size={16} />} />
-                                    <HeaderAction icon={<Users size={16} />} />
-                                    <div className="w-px h-6 bg-border/50 mx-1" />
-                                    <HeaderAction icon={<MoreVertical size={16} />} />
-                                </div>
-                            </header>
-
-                            {/* Messages Grid */}
-                            <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6 custom-scrollbar z-10">
-                                <AnimatePresence initial={false}>
-                                    {messages.map((msg, idx) => {
-                                        const isSelf = msg.senderId === currentUser.id;
-                                        const prevMsg = messages[idx - 1];
-                                        const isGrouped = prevMsg && prevMsg.senderId === msg.senderId;
-                                        const showAvatar = !isGrouped;
-
-                                        return (
-                                            <MessageBubble
-                                                key={msg.id}
-                                                msg={msg}
-                                                isSelf={isSelf}
-                                                showAvatar={showAvatar}
-                                                isGrouped={isGrouped}
-                                            />
-                                        );
-                                    })}
-                                </AnimatePresence>
-                            </div>
-
-                            {/* Input Area */}
-                            <div className="p-6 bg-background/80 backdrop-blur-md z-10 border-t border-border/30">
-                                <div className="max-w-5xl mx-auto bg-card border border-border rounded-2xl p-2 flex flex-col shadow-2xl shadow-primary/5 focus-within:border-primary/50 focus-within:ring-4 focus-within:ring-primary/5 transition-all">
-                                    <textarea
-                                        ref={textareaRef}
-                                        rows={1}
-                                        placeholder={`Secure transmission to #${activeChannel.name}...`}
-                                        value={input}
-                                        onChange={handleInputResize}
-                                        onKeyDown={handleKeyPress}
-                                        className="w-full bg-transparent border-none outline-none text-sm text-foreground px-5 py-3 resize-none max-h-60 font-bold placeholder:text-muted-foreground/40 placeholder:uppercase placeholder:text-[10px] placeholder:tracking-[0.2em]"
+                <div className="flex-1 overflow-y-auto px-3 pb-6 custom-scrollbar">
+                    {activeTab === 'sectors' ? (
+                        <div className="space-y-1">
+                            {channels
+                                .filter(c => c.type !== 'dm')
+                                .map(chan => (
+                                    <ChatListItem
+                                        key={chan.id}
+                                        channel={chan}
+                                        active={activeChannel?.id === chan.id}
+                                        onClick={() => {
+                                            setActiveChannel(chan);
+                                            setIsMobileConversationOpen(true);
+                                        }}
                                     />
-                                    <div className="flex items-center justify-between px-3 pb-2 pt-1">
-                                        <div className="flex items-center gap-2">
-                                            <InputTool icon={<Plus size={18} />} />
-                                            <InputTool icon={<Smile size={18} />} />
-                                            <InputTool icon={<Paperclip size={18} />} />
-                                        </div>
-                                        <button
-                                            onClick={handleSendMessage}
-                                            disabled={!input.trim()}
-                                            className={cn(
-                                                "px-6 py-2.5 rounded-xl transition-all flex items-center gap-2",
-                                                input.trim()
-                                                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:translate-y-[-1px] active:translate-y-0"
-                                                    : "bg-secondary text-muted-foreground/30 cursor-not-allowed uppercase text-[9px] font-black tracking-widest"
-                                            )}
-                                        >
-                                            <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Transmit</span>
-                                            <Send size={14} className={cn(input.trim() ? "animate-pulse" : "")} />
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </>
+                                ))}
+                        </div>
                     ) : (
-                        <div className="flex-1 flex flex-col items-center justify-center space-y-8 z-10">
-                            <div className="relative">
-                                <div className="w-24 h-24 rounded-[2.5rem] bg-secondary border border-border flex items-center justify-center shadow-inner group overflow-hidden">
-                                    <MessageSquare size={40} className="text-muted-foreground/30 group-hover:scale-110 group-hover:text-primary/40 transition-all duration-500" />
-                                    <div className="absolute inset-0 bg-gradient-to-tr from-primary/5 to-transparent pointer-events-none" />
-                                </div>
-                                <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-background border border-border rounded-xl flex items-center justify-center shadow-lg animate-bounce">
-                                    <Zap size={14} className="text-primary" />
-                                </div>
-                            </div>
-                            <div className="text-center space-y-2">
-                                <h3 className="text-sm font-black uppercase tracking-[0.3em] text-foreground">Awaiting Sector Link</h3>
-                                <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest opacity-40">Initialize synchronization to begin communication pulse</p>
-                            </div>
+                        <div className="space-y-1 mt-1">
+                            <p className="px-3 mb-3 text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2 opacity-60">
+                                <span className="w-1.5 h-1.5 rounded-full bg-primary/50" />
+                                Active Personnel
+                            </p>
+                            {members
+                                .filter(m => m.id !== currentUser.id)
+                                .map(member => {
+                                    const dmChannel = channels.find(c => c.type === 'dm' && c.otherMemberEmail === member.email);
+                                    return (
+                                        <MemberItem
+                                            key={member.id}
+                                            member={member}
+                                            active={activeChannel?.type === 'dm' && activeChannel.otherMemberEmail === member.email}
+                                            onClick={() => {
+                                                startDirectMessage(member.id, member.email);
+                                                setIsMobileConversationOpen(true);
+                                            }}
+                                            lastMessage={dmChannel?.lastMessage}
+                                            lastTime={dmChannel?.lastMessageTime}
+                                            unread={dmChannel?.unreadCount}
+                                        />
+                                    );
+                                })}
                         </div>
                     )}
-                </main>
-            </div>
-        </div>
-    );
-}
-
-function UserItem({ name, online = false, isSelf = false }: { name: string, online?: boolean, isSelf?: boolean }) {
-    return (
-        <div className="flex items-center gap-4 px-4 py-2.5 rounded-xl hover:bg-secondary/50 transition-all cursor-pointer group border border-transparent hover:border-border/50">
-            <div className="relative">
-                <div className="w-8 h-8 rounded-xl bg-card border border-border flex items-center justify-center text-[10px] font-black text-muted-foreground transition-all uppercase shadow-xs group-hover:scale-110 group-hover:border-primary/30 group-hover:text-primary">
-                    {name.split(' ').map(n => n[0]).join('')}
+                    <div className="px-5 py-12 text-center opacity-30">
+                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Scanning for Sectors...</p>
+                    </div>
                 </div>
-                {online && (
-                    <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-background bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.7)] animate-pulse" />
+            </aside>
+
+            {/* Main Chat Area */}
+            <main className={cn(
+                "flex-1 flex flex-col min-w-0 bg-background relative transition-colors duration-500 h-full",
+                isMobileConversationOpen ? "flex" : "hidden md:flex"
+            )}>
+                <div className="absolute inset-0 bg-grid-zinc-900/[0.02] dark:bg-grid-white/[0.01] pointer-events-none" />
+
+                {activeChannel ? (
+                    <>
+                        {/* Glassy Chat Header */}
+                        <header className="h-16 border-b border-border px-4 md:px-8 flex items-center shrink-0 bg-background/80 backdrop-blur-xl z-30 transition-colors duration-500">
+                            <div className="flex items-center gap-3 md:gap-4 overflow-hidden flex-1">
+                                <button
+                                    onClick={() => setIsMobileConversationOpen(false)}
+                                    className="md:hidden p-2 -ml-2 text-muted-foreground hover:text-foreground transition-all"
+                                >
+                                    <ChevronLeft size={20} />
+                                </button>
+
+                                <div className="relative shrink-0">
+                                    <div className="w-10 h-10 rounded-2xl bg-accent border border-border flex items-center justify-center text-muted-foreground overflow-hidden shadow-inner group-hover:scale-105 transition-transform">
+                                        {activeChannel.avatar ? (
+                                            <img src={activeChannel.avatar} alt={activeChannel.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <User size={20} />
+                                        )}
+                                    </div>
+                                    <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-background shadow-[0_0_15px_rgba(16,185,129,0.5)] animate-pulse" />
+                                </div>
+
+                                <div className="flex flex-col gap-0.5 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                        <h2 className="text-xs md:text-sm font-black text-foreground uppercase tracking-tight truncate max-w-[180px] sm:max-w-none">
+                                            {activeChannel.type === 'dm' && activeChannel.otherMemberEmail ? activeChannel.otherMemberEmail : activeChannel.name}
+                                        </h2>
+                                        <div className="shrink-0">
+                                            <RoleBadge role={activeChannel.type === 'dm' ? 'Developer' : 'Manager'} />
+                                        </div>
+                                    </div>
+                                    <p className="text-[10px] text-emerald-500/70 font-black uppercase tracking-[0.1em] leading-none flex items-center gap-1.5">
+                                        <span className="w-1 h-1 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
+                                        Secure Link Active
+                                    </p>
+                                </div>
+                            </div>
+                        </header>
+
+                        {/* Messages Area */}
+                        <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 md:p-10 space-y-6 custom-scrollbar bg-background scroll-smooth transition-colors duration-500">
+                            <div className="max-w-4xl mx-auto space-y-4">
+                                <AnimatePresence initial={false}>
+                                    {messages.map((msg, idx) => (
+                                        <MessageBubble
+                                            key={msg.id}
+                                            msg={msg}
+                                            isSelf={msg.senderId === currentUser.id}
+                                        />
+                                    ))}
+                                </AnimatePresence>
+                            </div>
+                        </div>
+
+                        {/* Enhanced Input Area */}
+                        <div className="p-6 bg-background z-10 transition-colors duration-500">
+                            <div className="max-w-4xl mx-auto flex items-end gap-3 bg-accent/30 border border-border rounded-3xl p-2 pr-2.5 shadow-2xl transition-all focus-within:border-primary/30 focus-within:bg-accent/50 focus-within:ring-4 focus-within:ring-primary/5">
+                                <div className="flex items-center gap-1 pb-1 md:pb-1.5 pl-2">
+                                    <InputTool icon={<SmilePlus size={20} />} />
+                                </div>
+                                <textarea
+                                    ref={textareaRef}
+                                    rows={1}
+                                    placeholder={`Transmit to ${activeChannel.name}...`}
+                                    value={input}
+                                    onChange={(e) => {
+                                        setInput(e.target.value);
+                                        e.target.style.height = 'auto';
+                                        e.target.style.height = `${e.target.scrollHeight}px`;
+                                    }}
+                                    onKeyDown={handleKeyPress}
+                                    className="flex-1 bg-transparent border-none outline-none text-[14px] text-foreground px-1 py-3 resize-none max-h-40 font-medium placeholder:text-muted-foreground"
+                                />
+                                <button
+                                    onClick={handleSendMessage}
+                                    disabled={!input.trim()}
+                                    className={cn(
+                                        "w-11 h-11 mb-0.5 rounded-2xl flex items-center justify-center transition-all shrink-0 shadow-lg",
+                                        input.trim()
+                                            ? "bg-primary text-primary-foreground shadow-primary/30 hover:scale-105 hover:opacity-90 active:scale-95"
+                                            : "bg-accent text-muted-foreground/30 cursor-not-allowed border border-border/50"
+                                    )}
+                                >
+                                    <Send size={18} className={input.trim() ? "translate-x-0.5 -translate-y-0.5" : ""} />
+                                </button>
+                            </div>
+                        </div>
+                    </>
+                ) : (
+                    <div className="flex-1 flex flex-col items-center justify-center p-8 bg-background transition-colors duration-500">
+                        <div className="w-24 h-24 rounded-[2.5rem] bg-accent border border-border flex items-center justify-center mb-8 shadow-inner group overflow-hidden">
+                            <MessageSquare size={40} className="text-muted-foreground/20 group-hover:text-primary transition-all duration-700 group-hover:scale-110" />
+                        </div>
+                        <h3 className="text-lg font-black text-foreground uppercase tracking-[0.3em] mb-2 opacity-80">Secure Portal</h3>
+                        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em] text-center max-w-xs leading-relaxed opacity-60">
+                            No active communication sector selected. Select a terminal to begin uplink synchronization.
+                        </p>
+                    </div>
                 )}
+            </main>
+        </div >
+    );
+}
+
+function NavIcon({ icon, active = false }: { icon: React.ReactNode; active?: boolean }) {
+    return (
+        <button className={cn(
+            "w-12 h-12 flex items-center justify-center rounded-2xl transition-all duration-300 relative group",
+            active ? "bg-card text-primary shadow-md ring-1 ring-border" : "text-muted-foreground hover:text-foreground hover:bg-accent"
+        )}>
+            {icon}
+            {active && <div className="absolute -left-0 w-1 h-6 bg-primary rounded-r-full shadow-[0_0_8px_rgba(var(--primary-rgb),0.6)]" />}
+            <div className="absolute left-full ml-4 px-3 py-1.5 bg-card text-[10px] font-black text-foreground rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-300 translate-x-[-10px] group-hover:translate-x-0 whitespace-nowrap z-[100] border border-border shadow-2xl uppercase tracking-widest">
+                Unit Control
             </div>
-            <div className="flex flex-col min-w-0">
-                <span className="text-[11px] font-black text-muted-foreground uppercase tracking-tight group-hover:text-foreground transition-colors truncate">
-                    {name} {isSelf && <span className="text-[8px] text-primary/40 ml-1">(SELF)</span>}
-                </span>
+        </button>
+    );
+}
+
+function ChatListItem({ channel, active, onClick }: { channel: Channel; active: boolean; onClick: () => void }) {
+    return (
+        <div
+            onClick={onClick}
+            className={cn(
+                "flex items-center gap-4 p-4 rounded-2xl cursor-pointer transition-all duration-300 border border-transparent mb-1 group px-4",
+                active ? "bg-primary/10 border-primary/20 shadow-xs" : "hover:bg-accent/40"
+            )}
+        >
+            <div className="relative shrink-0">
+                <div className="w-12 h-12 rounded-2xl bg-accent border border-border flex items-center justify-center text-muted-foreground group-hover:scale-105 transition-transform duration-300 overflow-hidden bg-cover bg-center" style={channel.avatar ? { backgroundImage: `url(${channel.avatar})` } : {}}>
+                    {!channel.avatar && <MessageSquare size={18} className="group-hover:text-primary transition-colors" />}
+                </div>
+                {active && <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-background shadow-sm shadow-emerald-500/40" />}
+            </div>
+            <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1">
+                    <h3 className={cn("text-xs font-black uppercase tracking-tight truncate border-b-2 border-transparent transition-all", active ? "text-primary border-primary/20" : "text-foreground group-hover:text-primary")}>
+                        {channel.name}
+                    </h3>
+                    <span className="text-[9px] font-black text-zinc-700 whitespace-nowrap ml-2 uppercase tracking-tighter tabular-nums">
+                        {channel.lastMessageTime}
+                    </span>
+                </div>
+                <div className="flex items-center justify-between">
+                    <p className="text-[11px] text-muted-foreground font-medium truncate italic leading-none pr-4 group-hover:text-foreground transition-colors opacity-60 group-hover:opacity-100">
+                        {channel.lastMessage}
+                    </p>
+                    {channel.unreadCount ? (
+                        <span className="w-5 h-5 rounded-full bg-primary text-[9px] font-black text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/40 scale-100 hover:scale-110 transition-transform">
+                            {channel.unreadCount}
+                        </span>
+                    ) : null}
+                </div>
             </div>
         </div>
     );
 }
 
-function MessageBubble({ msg, isSelf, showAvatar, isGrouped }: { msg: Message, isSelf: boolean, showAvatar: boolean, isGrouped: boolean }) {
+function MemberItem({ member, active, onClick, lastMessage, lastTime, unread }: { member: WorkspaceMember; active: boolean; onClick: () => void; lastMessage?: string; lastTime?: string; unread?: number }) {
+    return (
+        <div
+            onClick={onClick}
+            className={cn(
+                "flex items-center gap-4 p-4 rounded-2xl cursor-pointer transition-all duration-300 border border-transparent mb-1 group",
+                active ? "bg-primary/10 border-primary/20 shadow-xs" : "hover:bg-accent/40"
+            )}
+        >
+            <div className="relative shrink-0">
+                <div className="w-12 h-12 rounded-2xl bg-accent border border-border flex items-center justify-center text-muted-foreground font-black text-[10px] uppercase group-hover:bg-accent/80 transition-colors">
+                    {member.email.charAt(0)}
+                </div>
+                {member.isOnline && <div className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-background shadow-sm shadow-emerald-500/40 animate-pulse" />}
+            </div>
+            <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1">
+                    <h3 className={cn("text-xs font-black uppercase tracking-tight truncate", active ? "text-primary" : "text-foreground group-hover:text-primary")}>
+                        {formatName(member.name, member.email)}
+                    </h3>
+                    <span className="text-[9px] font-black text-zinc-700 whitespace-nowrap ml-2 uppercase tracking-tighter">
+                        {lastTime || ''}
+                    </span>
+                </div>
+                <div className="flex items-center justify-between">
+                    <p className="text-[11px] text-muted-foreground font-medium truncate italic leading-none pr-4 opacity-70 group-hover:opacity-100">
+                        {lastMessage || member.email}
+                    </p>
+                    {unread ? (
+                        <span className="w-5 h-5 rounded-full bg-primary text-[9px] font-black text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/40">
+                            {unread}
+                        </span>
+                    ) : null}
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function MessageBubble({ msg, isSelf }: { msg: Message; isSelf: boolean }) {
     const timeStr = new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     return (
         <motion.div
-            initial={{ opacity: 0, x: isSelf ? 20 : -20 }}
-            animate={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 10, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.35, ease: 'easeOut' }}
             className={cn(
-                "flex w-full",
-                isSelf ? "justify-end" : "justify-start",
-                isGrouped ? "mt-1" : "mt-6"
+                "flex w-full group",
+                isSelf ? "justify-end" : "justify-start"
             )}
         >
             <div className={cn(
-                "flex max-w-[85%] sm:max-w-[70%]",
-                isSelf ? "flex-row-reverse" : "flex-row"
+                "max-w-[85%] sm:max-w-[65%] relative px-5 py-4 rounded-[1.25rem] shadow-sm border transition-all duration-500",
+                isSelf
+                    ? "bg-linear-to-br from-zinc-800 to-zinc-950 dark:from-zinc-100 dark:to-zinc-300 text-white dark:text-zinc-950 rounded-tr-none border-zinc-700/50 dark:border-zinc-100/20 shadow-lg shadow-zinc-900/20"
+                    : "bg-zinc-100/80 dark:bg-zinc-900/80 text-zinc-950 dark:text-zinc-100 rounded-tl-none border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 shadow-sm backdrop-blur-md"
             )}>
-                <div className="w-10 shrink-0 flex flex-col items-center">
-                    {showAvatar && !isSelf && (
-                        <div className="w-10 h-10 rounded-2xl bg-secondary border border-border flex items-center justify-center text-primary/60 shadow-xs transition-transform hover:scale-110 cursor-pointer">
-                            <User size={18} />
-                        </div>
-                    )}
-                </div>
-
+                {!isSelf && msg.senderName && (
+                    <p className="text-[9px] font-black text-primary uppercase tracking-[0.15em] mb-1.5 opacity-90 border-b border-border/50 pb-1 w-fit">
+                        {msg.senderName}
+                    </p>
+                )}
+                <p className="text-[13px] font-medium leading-relaxed mb-3 pr-2 select-text">
+                    {msg.content}
+                </p>
                 <div className={cn(
-                    "flex flex-col mx-4",
-                    isSelf ? "items-end" : "items-start"
+                    "flex items-center justify-end gap-2 h-3",
+                    isSelf ? "text-zinc-400/50 dark:text-zinc-500/50" : "text-muted-foreground"
                 )}>
-                    {showAvatar && (
-                        <div className="flex items-center gap-3 mb-2 px-1">
-                            {!isSelf && <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Entity {msg.senderId}</span>}
-                            <span className="text-[8px] text-muted-foreground/30 font-black uppercase tracking-widest">{timeStr}</span>
-                        </div>
-                    )}
-
-                    <div className={cn(
-                        "px-5 py-3.5 rounded-2xl text-[13px] font-bold leading-relaxed relative group shadow-sm transition-all",
-                        isSelf
-                            ? "bg-primary text-primary-foreground rounded-tr-none shadow-primary/10 border border-primary/20"
-                            : "bg-card text-foreground rounded-tl-none border border-border/50 hover:border-primary/20"
-                    )}>
-                        {msg.content}
-
-                        {isSelf && !isGrouped && (
-                            <div className="absolute right-0 top-full pt-1.5 opacity-40 group-hover:opacity-100 transition-opacity">
-                                {msg.isOptimistic ? (
-                                    <div className="flex items-center gap-1.5">
-                                        <span className="text-[8px] font-black uppercase tracking-widest text-primary/40">Syncing</span>
-                                        <Clock size={10} className="text-primary/40 animate-spin" />
-                                    </div>
-                                ) : (
-                                    <div className="flex items-center gap-1.5">
-                                        <span className="text-[8px] font-black uppercase tracking-widest text-primary/40">Transmitted</span>
-                                        <CheckCheck size={10} className="text-primary/60" />
-                                    </div>
-                                )}
+                    <span className="text-[8px] font-black uppercase tracking-widest opacity-80 tabular-nums">{timeStr}</span>
+                    {isSelf && (
+                        msg.isOptimistic ? (
+                            <Clock size={10} className="animate-spin opacity-50" />
+                        ) : (
+                            <div className="flex items-center -space-x-1.5">
+                                <CheckCheck size={13} className={cn("transition-all duration-700", msg.isSeen ? "text-primary/70 dark:text-zinc-400 drop-shadow-[0_0_5px_rgba(255,255,255,0.3)]" : "text-muted-foreground/30")} />
                             </div>
-                        )}
-                    </div>
+                        )
+                    )}
                 </div>
             </div>
         </motion.div>
     );
 }
 
-function HeaderAction({ icon }: { icon: React.ReactNode }) {
+function RoleBadge({ role }: { role: UserRole }) {
     return (
-        <button className="p-2.5 text-muted-foreground hover:text-primary transition-all hover:bg-primary/5 rounded-xl border border-transparent hover:border-primary/20 shadow-xs">
-            {icon}
-        </button>
+        <span className={cn(
+            "text-[8px] font-black uppercase tracking-[0.2em] px-3 py-0.5 rounded-full border shadow-sm backdrop-blur-md transition-all hover:scale-105",
+            ROLE_STYLES[role] || ROLE_STYLES.Member
+        )}>
+            {role}
+        </span>
     );
 }
 
+
 function InputTool({ icon }: { icon: React.ReactNode }) {
     return (
-        <button className="p-2.5 text-muted-foreground hover:text-foreground transition-all hover:bg-secondary rounded-xl bg-secondary/30 border border-border/50 shadow-inner">
+        <button className="p-3 text-muted-foreground hover:text-primary hover:bg-accent/80 rounded-full transition-all active:scale-90 group relative shadow-inner">
             {icon}
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-2.5 py-1.5 bg-zinc-900 text-[8px] font-black text-zinc-300 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0 border border-zinc-800 whitespace-nowrap uppercase tracking-widest shadow-2xl backdrop-blur-xl">
+                Emoji Interface
+            </div>
         </button>
     );
 }

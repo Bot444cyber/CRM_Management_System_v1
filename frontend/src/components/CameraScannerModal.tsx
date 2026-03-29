@@ -107,7 +107,7 @@ export default function CameraScannerModal({ isOpen, onClose, onCapture }: Camer
 
                         {/* Scanning Box overlay */}
                         {!error && (
-                            <div className="absolute inset-0 border-[6px] border-indigo-500/30 m-8 rounded-2xl pointer-events-none"></div>
+                            <div className="absolute inset-0 border-[6px] border-zinc-400/30 m-8 rounded-2xl pointer-events-none"></div>
                         )}
                     </div>
 
@@ -123,7 +123,7 @@ export default function CameraScannerModal({ isOpen, onClose, onCapture }: Camer
                         <button
                             onClick={handleCapture}
                             disabled={!!error}
-                            className="w-16 h-16 rounded-full bg-indigo-500 hover:bg-indigo-400 border-4 border-indigo-500/30 flex items-center justify-center text-white transition-all disabled:opacity-50"
+                            className="w-16 h-16 rounded-full bg-zinc-800 hover:bg-zinc-700 border-4 border-zinc-500/30 flex items-center justify-center text-white transition-all disabled:opacity-50"
                         >
                             <Camera size={24} fill="currentColor" />
                         </button>

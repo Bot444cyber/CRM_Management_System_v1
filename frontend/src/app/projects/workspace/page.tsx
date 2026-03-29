@@ -22,8 +22,30 @@ interface WorkspaceMember {
     role: string;
     joinedAt: string;
     userName: string;
+    name?: string | null;
+    email?: string;
     userRole: string;
 }
+
+const formatName = (name: string | null, email: string) => {
+    if (name) return name;
+    if (!email) return 'Unknown Operative';
+    const prefix = email.split('@')[0];
+    return prefix
+        .split(/[._-]/)
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+        .join(' ');
+};
+
+const getInitials = (nameOrEmail: string) => {
+    if (!nameOrEmail) return '??';
+    const name = nameOrEmail.includes('@') ? nameOrEmail.split('@')[0] : nameOrEmail;
+    const parts = name.split(/[._\s-]/).filter(Boolean);
+    if (parts.length >= 2) {
+        return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return parts[0]?.substring(0, 2).toUpperCase() || '??';
+};
 
 interface Project {
     id: string;
@@ -368,12 +390,12 @@ export default function WorkspaceDetailsPage() {
                                                     <tr key={member.id} className="group hover:bg-accent/30 transition-all">
                                                         <td className="px-6 py-5">
                                                             <div className="flex items-center gap-3">
-                                                                <div className="w-9 h-9 rounded-xl bg-secondary border border-border flex items-center justify-center text-xs font-bold text-foreground uppercase tracking-tighter shadow-inner">
-                                                                    {member.userName?.[0]}
+                                                                <div className="w-9 h-9 rounded-xl bg-secondary border border-border flex items-center justify-center text-[10px] font-bold text-foreground uppercase tracking-tighter shadow-inner">
+                                                                    {getInitials(member.name || member.email || member.userName)}
                                                                 </div>
                                                                 <div className="min-w-0">
-                                                                    <p className="text-sm font-bold text-foreground leading-none truncate">{member.userName}</p>
-                                                                    <p className="text-[10px] text-muted-foreground mt-1 font-mono uppercase tracking-tighter truncate">ID: {member.userId?.toString().slice(0, 8) || 'N/A'}</p>
+                                                                    <p className="text-sm font-bold text-foreground leading-none truncate">{formatName(member.name || null, member.email || member.userName)}</p>
+                                                                    <p className="text-[10px] text-muted-foreground mt-1 font-mono uppercase tracking-tighter truncate">{member.email || 'OPERATIVE ID INBOUND'}</p>
                                                                 </div>
                                                             </div>
                                                         </td>

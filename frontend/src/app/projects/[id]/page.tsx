@@ -11,7 +11,7 @@ import {
     Check,
     PieChart as PieIcon,
     Shield,
-    CheckCircle2
+    CheckCircle2, Target
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell, Pie, PieChart } from 'recharts';
 import { motion, Reorder, AnimatePresence, LayoutGroup } from 'motion/react';
@@ -52,6 +52,25 @@ const TABS: { id: Tab; icon: React.ElementType; label: string }[] = [
     { id: 'pulse', icon: Activity, label: 'Activity' },
     { id: 'settings', icon: Settings, label: 'Settings' },
 ];
+
+const formatName = (name: string | null, email: string) => {
+    if (name) return name;
+    const prefix = email.split('@')[0];
+    return prefix
+        .split(/[._-]/)
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+        .join(' ');
+};
+
+const getInitials = (nameOrEmail: string) => {
+    if (!nameOrEmail) return '??';
+    const name = nameOrEmail.includes('@') ? nameOrEmail.split('@')[0] : nameOrEmail;
+    const parts = name.split(/[._\s-]/).filter(Boolean);
+    if (parts.length >= 2) {
+        return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return parts[0]?.substring(0, 2).toUpperCase() || '??';
+};
 
 export default function ProjectDashboardPage() {
     const params = useParams();
@@ -137,9 +156,21 @@ export default function ProjectDashboardPage() {
     const currentUserRole = getEffectiveRole();
 
     if (loading) return (
-        <div className="flex-1 flex flex-col items-center justify-center bg-background">
-            <div className="w-10 h-10 border-2 border-primary/20 border-t-primary rounded-full animate-spin mb-4" />
-            <p className="text-xs font-semibold text-muted-foreground animate-pulse">Loading project details...</p>
+        <div className="h-full w-full flex flex-col items-center justify-center bg-background min-h-[400px] transition-colors duration-500">
+            <div className="relative mb-8">
+                <div className="w-16 h-16 border-4 border-primary/10 border-t-primary rounded-full animate-spin" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                    <Target size={24} className="text-primary animate-pulse" />
+                </div>
+            </div>
+            <div className="space-y-2 text-center">
+                <h3 className="text-xs font-black text-foreground uppercase tracking-[0.4em] animate-pulse">
+                    Synchronizing Grid
+                </h3>
+                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest opacity-40">
+                    Establishing Tactical Uplink...
+                </p>
+            </div>
         </div>
     );
 
@@ -362,12 +393,12 @@ export default function ProjectDashboardPage() {
                             <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Recent Joiners</p>
                             <div className="space-y-2">
                                 {members.slice(0, 3).map(m => (
-                                    <div key={m.id} className="flex items-center gap-3 p-2 rounded-xl bg-secondary/30 border border-border/30">
+                                    <div key={m.memberId || m.id} className="flex items-center gap-3 p-2 rounded-xl bg-secondary/30 border border-border/30">
                                         <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center text-[10px] font-bold text-muted-foreground">
-                                            {m.userName?.[0].toUpperCase() || 'U'}
+                                            {getInitials(m.name || m.email || m.userName)}
                                         </div>
                                         <div className="min-w-0">
-                                            <p className="text-xs font-semibold text-foreground truncate">{m.userName?.split('@')[0]}</p>
+                                            <p className="text-xs font-semibold text-foreground truncate">{formatName(m.name, m.email || m.userName)}</p>
                                             <p className="text-[9px] text-muted-foreground capitalize">{m.projectRole?.replace('_', ' ')}</p>
                                         </div>
                                     </div>
@@ -427,9 +458,6 @@ export default function ProjectDashboardPage() {
                                 </h1>
                                 <RoleBadge role={currentUserRole} />
                             </div>
-                            <p className="text-[10px] text-muted-foreground opacity-60 uppercase font-black tracking-widest mt-1">
-                                Project Command Center v1.0
-                            </p>
                         </div>
                     </div>
                     <nav className="hidden lg:flex items-center gap-1 p-1 rounded-xl bg-secondary border border-border">
@@ -449,17 +477,6 @@ export default function ProjectDashboardPage() {
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <div className="hidden sm:flex items-center gap-4 px-4 py-1.5 rounded-xl bg-secondary/50 border border-border/50">
-                        <div className="flex flex-col items-end">
-                            <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Health</span>
-                            <span className={cn("text-[10px] font-black", project.health === 'Green' ? 'text-emerald-500' : project.health === 'Yellow' ? 'text-amber-500' : 'text-destructive')}>{project.health}</span>
-                        </div>
-                        <div className="w-px h-6 bg-border/50" />
-                        <div className="flex flex-col items-end">
-                            <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Progress</span>
-                            <span className="text-[10px] font-black text-primary">{totalProgress}%</span>
-                        </div>
-                    </div>
                     <ThemeToggle />
                 </div>
             </header >

@@ -21,11 +21,30 @@ const VALID_WORKSPACE_ROLES = ["admin", "manager", "team_leader", "developer", "
 // Role specific styling
 const ROLE_THEMES: Record<string, { bg: string, text: string, border: string, icon: any }> = {
     'owner': { bg: 'bg-amber-500/10', text: 'text-amber-500', border: 'border-amber-500/20', icon: ShieldCheck },
-    'admin': { bg: 'bg-violet-500/10', text: 'text-violet-500', border: 'border-violet-500/20', icon: ShieldCheck },
+    'admin': { bg: 'bg-zinc-800/10', text: 'text-zinc-800 dark:text-zinc-200', border: 'border-zinc-800/20', icon: ShieldCheck },
     'manager': { bg: 'bg-blue-500/10', text: 'text-blue-500', border: 'border-blue-500/20', icon: Zap },
     'developer': { bg: 'bg-emerald-500/10', text: 'text-emerald-500', border: 'border-emerald-500/20', icon: User },
     'designer': { bg: 'bg-pink-500/10', text: 'text-pink-500', border: 'border-pink-500/20', icon: User },
     'member': { bg: 'bg-muted-foreground/10', text: 'text-muted-foreground', border: 'border-muted-foreground/20', icon: User },
+};
+
+const formatName = (name: string | null, email: string) => {
+    if (name) return name;
+    const prefix = email.split('@')[0];
+    return prefix
+        .split(/[._-]/)
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+        .join(' ');
+};
+
+const getInitials = (nameOrEmail: string) => {
+    if (!nameOrEmail) return '??';
+    const name = nameOrEmail.includes('@') ? nameOrEmail.split('@')[0] : nameOrEmail;
+    const parts = name.split(/[._\s-]/).filter(Boolean);
+    if (parts.length >= 2) {
+        return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return parts[0]?.substring(0, 2).toUpperCase() || '??';
 };
 
 export default function GlobalTeamPage() {
@@ -128,10 +147,20 @@ export default function GlobalTeamPage() {
     }, [activeWorkspace, uniqueWorkspaces]);
 
     if (loading) return (
-        <div className="flex-1 flex flex-col items-center justify-center bg-background">
-            <div className="flex flex-col items-center gap-4">
-                <div className="w-10 h-10 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
-                <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Synchronizing Personnel Grid...</p>
+        <div className="h-full w-full flex flex-col items-center justify-center bg-background min-h-[400px] transition-colors duration-500">
+            <div className="relative mb-8">
+                <div className="w-16 h-16 border-4 border-primary/10 border-t-primary rounded-full animate-spin" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                    <Users size={24} className="text-primary animate-pulse" />
+                </div>
+            </div>
+            <div className="space-y-2 text-center">
+                <h3 className="text-xs font-black text-foreground uppercase tracking-[0.4em] animate-pulse">
+                    Synchronizing Personnel
+                </h3>
+                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest opacity-40">
+                    Establishing Neural Uplink...
+                </p>
             </div>
         </div>
     );
@@ -281,13 +310,13 @@ function MemberCard({ m, idx, onUpdateRole, onRemove }: { m: any, idx: number, o
                                 "w-12 h-12 rounded-2xl flex items-center justify-center text-sm font-bold rotate-0 group-hover:rotate-6 transition-transform duration-500",
                                 "bg-secondary border border-border/50 text-foreground"
                             )}>
-                                {m.email[0].toUpperCase()}
+                                {getInitials(m.name || m.email)}
                                 <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-background shadow-lg" />
                             </div>
                         </div>
                         <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2 mb-1">
-                                <h3 className="text-sm font-semibold text-foreground truncate">{m.email.split('@')[0]}</h3>
+                                <h3 className="text-sm font-semibold text-foreground truncate">{formatName(m.name, m.email)}</h3>
                                 <div className={cn(
                                     "flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold border",
                                     roleTheme.bg, roleTheme.text, roleTheme.border

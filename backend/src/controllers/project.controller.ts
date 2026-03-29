@@ -373,7 +373,10 @@ export const getProjects = async (req: Request, res: Response): Promise<void> =>
 
             // Fetch project members
             const members = await db
-                .select({ email: users.email })
+                .select({
+                    email: users.email,
+                    name: users.name
+                })
                 .from(projectMembers)
                 .innerJoin(users, eq(projectMembers.userId, users.id))
                 .where(eq(projectMembers.projectId, prj.id));
@@ -382,7 +385,10 @@ export const getProjects = async (req: Request, res: Response): Promise<void> =>
                 ...prj,
                 health,
                 atRiskCount,
-                projectMembers: members.slice(0, 2).map(m => m.email),
+                projectMembers: members.slice(0, 3).map(m => ({
+                    email: m.email,
+                    name: m.name
+                })),
                 totalMemberCount: members.length
             });
         }
@@ -605,7 +611,8 @@ export const getWorkspaceMembers = async (req: Request, res: Response): Promise<
                 userId: workspaceMembers.userId,
                 role: workspaceMembers.role,
                 joinedAt: workspaceMembers.joinedAt,
-                userName: users.email, // Use email as identifier for now
+                userName: sql`COALESCE(${users.name}, SUBSTRING_INDEX(${users.email}, '@', 1))`,
+                email: users.email,
                 userRole: users.role
             })
             .from(workspaceMembers)

@@ -69,7 +69,6 @@ export default function SettingsView({ projectId, project, currentUserRole, refr
                     </div>
                     <div>
                         <h2 className="text-lg font-black text-foreground uppercase tracking-tight">Project Settings</h2>
-                        <p className="text-xs text-muted-foreground opacity-80 uppercase font-black tracking-widest leading-none">Configuration and management for this workspace node.</p>
                     </div>
                 </div>
             </div>

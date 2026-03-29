@@ -53,6 +53,7 @@ export const getProjectMembers = async (req: Request, res: Response): Promise<vo
                 projectRole: projectMembers.role,
                 joinedAt: projectMembers.joinedAt,
                 email: users.email,
+                name: users.name,
                 systemRole: users.role,
             })
             .from(projectMembers)
@@ -347,6 +348,7 @@ export const getJoinRequests = async (req: Request, res: Response): Promise<void
                 message: projectJoinRequests.message,
                 createdAt: projectJoinRequests.createdAt,
                 email: users.email,
+                name: users.name,
             })
             .from(projectJoinRequests)
             .innerJoin(users, eq(projectJoinRequests.userId, users.id))
@@ -441,7 +443,7 @@ export const getGlobalTeam = async (req: Request, res: Response): Promise<void> 
                 id: workspaceMembers.id,
                 userId: users.id,
                 email: users.email,
-                name: users.email, // Use email as name if name is not available
+                name: users.name,
                 role: workspaceMembers.role,
                 joinedAt: workspaceMembers.joinedAt,
                 workspaceName: workspaces.name,

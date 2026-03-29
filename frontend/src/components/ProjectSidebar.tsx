@@ -163,13 +163,13 @@ export default function ProjectSidebar() {
 
     const sidebarContent = (
         <div className={cn(
-            "flex flex-col h-full bg-background border-r border-border/50 relative z-50 transition-all duration-300 ease-in-out group/sidebar overflow-hidden",
+            "flex flex-col h-full bg-background/80 backdrop-blur-xl border-r border-border/50 relative z-50 transition-all duration-300 ease-in-out group/sidebar overflow-hidden",
             isCollapsed && !isMobileOpen ? "w-[68px]" : "w-[260px]"
         )}>
             {/* Logo Section */}
-            <div className="h-14 flex items-center px-4 border-b border-border/50 shrink-0">
+            <div className="h-14 flex items-center px-4 border-b border-border/50 shrink-0 bg-background/50">
                 <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/20 shrink-0">
+                    <div className="w-8 h-8 rounded-lg bg-linear-to-br from-primary to-primary/80 flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/30 shrink-0">
                         <Target size={18} />
                     </div>
                     {!isCollapsed && (
@@ -269,8 +269,8 @@ export default function ProjectSidebar() {
                         </div>
                         <div className="px-2 relative">
                             {activeWorkspace ? (
-                                <button onClick={() => setIsWorkspaceListOpen(!isWorkspaceListOpen)} className={cn("w-full flex items-center gap-3 p-2 rounded-xl transition-all text-left group/ws", isWorkspaceListOpen ? "bg-secondary border-border" : "bg-card/30 border border-border/50 hover:border-primary/30 hover:bg-secondary/50")}>
-                                    <div className="w-9 h-9 rounded-xl bg-secondary border border-border flex items-center justify-center text-muted-foreground group-hover/ws:text-primary group-hover/ws:scale-110 transition-all shadow-inner">
+                                <button onClick={() => setIsWorkspaceListOpen(!isWorkspaceListOpen)} className={cn("w-full flex items-center gap-3 p-2 rounded-xl transition-all text-left group/ws", isWorkspaceListOpen ? "bg-secondary border-primary/20 shadow-lg shadow-primary/5" : "bg-card/40 border border-border/50 hover:border-primary/30 hover:bg-secondary/80")}>
+                                    <div className="w-9 h-9 rounded-xl bg-background border border-border flex items-center justify-center text-muted-foreground group-hover/ws:text-primary group-hover/ws:scale-110 transition-all shadow-xs">
                                         <Building2 size={18} />
                                     </div>
                                     <div className="min-w-0 flex-1">
@@ -355,13 +355,13 @@ export default function ProjectSidebar() {
                     href="/projects/workspace"
                     onClick={() => setIsMobileOpen(false)}
                     className={cn(
-                        "w-full group relative flex items-center transition-all duration-500 rounded-[1.25rem] overflow-hidden border border-primary/20 shadow-lg shadow-primary/5",
+                        "w-full group relative flex items-center transition-all duration-500 rounded-[1.25rem] overflow-hidden border border-primary/20 shadow-lg shadow-primary/10",
                         isCollapsed && !isMobileOpen ? "justify-center p-0 h-12" : "gap-4 px-4 py-3 h-14",
-                        "bg-primary/[0.03] hover:bg-primary/10 hover:border-primary/40 hover:scale-[1.02] active:scale-95"
+                        "bg-primary/[0.05] hover:bg-primary/10 hover:border-primary/40 hover:scale-[1.02] active:scale-95"
                     )}
                 >
-                    <div className="absolute inset-0 bg-radial-at-tr from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                    <div className="relative flex items-center justify-center text-primary group-hover:scale-110 group-hover:-rotate-12 transition-all duration-500 shadow-[0_0_15px_rgba(var(--primary),0.2)] bg-primary/10 w-8 h-8 rounded-lg border border-primary/20">
+                    <div className="absolute inset-0 bg-linear-to-tr from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                    <div className="relative flex items-center justify-center text-primary group-hover:scale-110 group-hover:-rotate-12 transition-all duration-500 shadow-md bg-white dark:bg-primary/20 w-8 h-8 rounded-lg border border-primary/20">
                         <Settings size={18} strokeWidth={2.5} />
                     </div>
                     {!isCollapsed && (
@@ -369,7 +369,7 @@ export default function ProjectSidebar() {
                             <span className="block text-[11px] font-black text-foreground uppercase tracking-[0.1em] leading-none group-hover:text-primary transition-colors">Workspace Control</span>
                         </div>
                     )}
-                    <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-primary/20 translate-y-[2px] group-hover:translate-y-0 transition-transform duration-500" />
+                    <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-primary/30 translate-y-[2px] group-hover:translate-y-0 transition-transform duration-500" />
                 </Link>
             </div>
 

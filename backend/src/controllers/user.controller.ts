@@ -15,6 +15,7 @@ export const searchUsers = async (req: Request, res: Response): Promise<void> =>
         const results = await db
             .select({
                 id: users.id,
+                name: users.name,
                 email: users.email,
                 role: users.role,
             })
@@ -22,6 +23,7 @@ export const searchUsers = async (req: Request, res: Response): Promise<void> =>
             .where(
                 or(
                     like(users.email, query),
+                    like(users.name, query),
                 )
             )
             .limit(10);

@@ -279,7 +279,7 @@ export default function WhatsAppPublishModal({ isOpen, onClose, productDetails }
                                                 </div>
 
                                                 {/* Icon */}
-                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-inner ${isGroup ? 'bg-indigo-500/10 text-indigo-500 ring-1 ring-indigo-500/20' : 'bg-orange-500/10 text-orange-500 ring-1 ring-orange-500/20'}`}>
+                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-inner ${isGroup ? 'bg-zinc-800/10 text-zinc-800 dark:text-zinc-400 ring-1 ring-zinc-800/20' : 'bg-orange-500/10 text-orange-500 ring-1 ring-orange-500/20'}`}>
                                                     {isGroup ? <Users size={18} /> : <User size={18} />}
                                                 </div>
 

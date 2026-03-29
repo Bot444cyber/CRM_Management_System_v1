@@ -203,7 +203,7 @@ const ProductDetailsPanel = ({ isOpen, onClose, product, onSave }: ProductDetail
                             <button
                                 onClick={() => fileInputRef.current?.click()}
                                 disabled={isExtracting}
-                                className="px-3 py-1.5 rounded-lg bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30 border border-indigo-500/30 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all disabled:opacity-50"
+                                className="px-3 py-1.5 rounded-lg bg-zinc-800/20 text-zinc-800 dark:text-zinc-400 hover:bg-zinc-800/30 border border-zinc-800/30 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all disabled:opacity-50"
                                 title="Upload Image"
                             >
                                 {isExtracting ? <Loader2 size={14} className="animate-spin" /> : <ImageIcon size={14} />}

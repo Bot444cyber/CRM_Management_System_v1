@@ -27,8 +27,9 @@ const STATUS_CONFIG: Record<string, { label: string; cls: string; color: string 
 
 const KANBAN_COLUMNS = [
     { id: 'Planning', title: 'Backlog', color: 'bg-blue-500' },
-    { id: 'Active', title: 'In Progress', color: 'bg-violet-500' },
+    { id: 'Active', title: 'In Progress', color: 'bg-zinc-900 dark:bg-white' },
     { id: 'Completed', title: 'Completed', color: 'bg-emerald-500' },
+
     { id: 'Archived', title: 'Archived', color: 'bg-muted-foreground' },
 ];
 
@@ -88,9 +89,21 @@ export default function ProjectsPortfolioPage() {
     }, [projects, searchQuery]);
 
     if (wsLoading || loading) return (
-        <div className="h-full bg-background flex flex-col items-center justify-center gap-4">
-            <Loader2 className="animate-spin text-primary" size={32} />
-            <span className="text-muted-foreground text-xs font-bold uppercase tracking-widest">Accessing Portfolio...</span>
+        <div className="h-full w-full flex flex-col items-center justify-center bg-background min-h-[400px] transition-colors duration-500">
+            <div className="relative mb-8">
+                <div className="w-16 h-16 border-4 border-primary/10 border-t-primary rounded-full animate-spin" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                    <Box size={24} className="text-primary animate-pulse" />
+                </div>
+            </div>
+            <div className="space-y-2 text-center">
+                <h3 className="text-xs font-black text-foreground uppercase tracking-[0.4em] animate-pulse">
+                    Accessing Portfolio
+                </h3>
+                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest opacity-40">
+                    Decrypting Workspace Assets...
+                </p>
+            </div>
         </div>
     );
 
@@ -138,7 +151,7 @@ export default function ProjectsPortfolioPage() {
             {canManage && activeWorkspace && (
                 <button
                     onClick={() => router.push('/projects/new')}
-                    className="fixed bottom-8 right-8 h-12 px-6 bg-foreground hover:bg-foreground/90 text-background rounded-2xl shadow-xl flex items-center gap-2 transition-all hover:scale-105 active:scale-95 z-50 group font-bold text-sm"
+                    className="fixed bottom-8 right-8 h-12 px-6 bg-zinc-100 dark:bg-white hover:bg-zinc-200 dark:hover:bg-zinc-100 text-zinc-950 rounded-2xl shadow-xl flex items-center gap-2 transition-all hover:scale-105 active:scale-95 z-50 group font-bold text-sm"
                 >
                     <Plus size={18} className="group-hover:rotate-90 transition-transform duration-300" />
                     <span>New Project</span>
@@ -190,13 +203,23 @@ function KanbanColumn({ col, projects, canManage }: { col: any, projects: any[],
 function ProjectCard({ prj, index, canManage }: { prj: any, index: number, canManage: boolean }) {
     const sCfg = STATUS_CONFIG[prj.health as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.Green;
 
-    const getInitials = (email: string) => {
-        if (!email) return '??';
-        const parts = email.split('@')[0].split(/[._-]/);
+    const formatName = (name: string | null, email: string) => {
+        if (name) return name;
+        const prefix = email.split('@')[0];
+        return prefix
+            .split(/[._-]/)
+            .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+            .join(' ');
+    };
+
+    const getInitials = (nameOrEmail: string) => {
+        if (!nameOrEmail) return '??';
+        const name = nameOrEmail.includes('@') ? nameOrEmail.split('@')[0] : nameOrEmail;
+        const parts = name.split(/[._\s-]/).filter(Boolean);
         if (parts.length >= 2) {
             return (parts[0][0] + parts[1][0]).toUpperCase();
         }
-        return email.substring(0, 2).toUpperCase();
+        return parts[0]?.substring(0, 2).toUpperCase() || '??';
     };
 
     const displayMembers = prj.projectMembers || [];
@@ -259,7 +282,7 @@ function ProjectCard({ prj, index, canManage }: { prj: any, index: number, canMa
                                         initial={{ width: 0 }}
                                         animate={{ width: `${prj.priority === 'High' ? 85 : 45}%` }}
                                         transition={{ duration: 1.5, ease: "easeOut" }}
-                                        className="h-full bg-linear-to-r from-primary/80 to-primary rounded-full relative"
+                                        className="h-full bg-linear-to-r from-zinc-100 to-white dark:from-white dark:to-zinc-100 rounded-full relative"
                                     >
                                         <div className="absolute inset-0 bg-white/20 blur-[2px]" />
                                     </motion.div>
@@ -270,9 +293,9 @@ function ProjectCard({ prj, index, canManage }: { prj: any, index: number, canMa
                             <div className="pt-5 border-t border-border/10 flex items-center justify-between gap-4">
                                 <div className="flex items-center gap-4">
                                     <div className="flex -space-x-2.5">
-                                        {displayMembers.map((email: string, i: number) => (
-                                            <div key={i} className="w-7 h-7 rounded-lg border-2 border-background bg-secondary/80 text-[9px] font-black flex items-center justify-center text-muted-foreground shadow-sm group-hover:border-primary/10 transition-colors">
-                                                {getInitials(email)}
+                                        {displayMembers.map((member: { email: string, name: string | null }, i: number) => (
+                                            <div key={i} title={formatName(member.name, member.email)} className="w-7 h-7 rounded-lg border-2 border-background bg-secondary/80 text-[9px] font-black flex items-center justify-center text-muted-foreground shadow-sm group-hover:border-primary/10 transition-colors">
+                                                {getInitials(member.name || member.email)}
                                             </div>
                                         ))}
                                         {remainingCount > 0 && (

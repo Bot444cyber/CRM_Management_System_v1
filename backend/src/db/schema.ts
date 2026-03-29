@@ -35,6 +35,7 @@ export interface PurchasedProduct {
 // Tables
 export const users = mysqlTable("users", {
     id: int("id").autoincrement().primaryKey(),
+    name: varchar("name", { length: 255 }), // User's full name
     email: varchar("email", { length: 255 }).notNull().unique(),
     password: varchar("password", { length: 255 }),
     isVerified: boolean("is_verified").default(false),
@@ -44,7 +45,9 @@ export const users = mysqlTable("users", {
     greenApiToken: varchar("green_api_token", { length: 255 }),
     createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
     updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`).onUpdateNow(),
+    lastActive: timestamp("last_active").default(sql`CURRENT_TIMESTAMP`).onUpdateNow(),
 });
+
 
 export const oauthAccounts = mysqlTable("oauth_accounts", {
     id: int("id").autoincrement().primaryKey(),
@@ -231,7 +234,7 @@ export const chatChannels = mysqlTable("chat_channels", {
     id: varchar("id", { length: 255 }).primaryKey(),
     workspaceId: varchar("workspace_id", { length: 255 }).notNull(),
     name: varchar("name", { length: 255 }).notNull(),
-    type: varchar("type", { length: 50 }).default("public"), 
+    type: varchar("type", { length: 50 }).default("public"),
     createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
@@ -242,3 +245,13 @@ export const chatMessages = mysqlTable("chat_messages", {
     content: text("content").notNull(),
     createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
+
+export const chatChannelMembers = mysqlTable("chat_channel_members", {
+    id: varchar("id", { length: 255 }).primaryKey(),
+    channelId: varchar("channel_id", { length: 255 }).notNull(),
+    userId: int("user_id").notNull(),
+    lastReadAt: timestamp("last_read_at").default(sql`CURRENT_TIMESTAMP`),
+    joinedAt: timestamp("joined_at").default(sql`CURRENT_TIMESTAMP`),
+});
+
+

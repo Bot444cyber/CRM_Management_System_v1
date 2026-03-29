@@ -36,7 +36,6 @@ export default function ResourceView({ projectId, requests, currentUserRole = 'u
                     </div>
                     <div>
                         <h2 className="text-lg font-black text-foreground uppercase tracking-tight">Resource Allocation</h2>
-                        <p className="text-xs text-muted-foreground opacity-80 uppercase font-black tracking-widest leading-none">Manage resource inventory and project requests.</p>
                     </div>
                 </div>
 
