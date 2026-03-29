@@ -186,6 +186,7 @@ export const verifyOTP = async (req: Request, res: Response): Promise<void> => {
             const hashedPassword = await hashPassword(password);
             const [insertResult] = await db.insert(users).values({
                 email,
+                name: fullName || null,
                 password: hashedPassword,
                 isVerified: true,
             });
@@ -193,6 +194,7 @@ export const verifyOTP = async (req: Request, res: Response): Promise<void> => {
             user = {
                 id: insertResult.insertId,
                 email,
+                name: fullName || null,
                 password: hashedPassword,
                 isVerified: true,
                 isTwoFactorEnabled: false,
@@ -200,7 +202,8 @@ export const verifyOTP = async (req: Request, res: Response): Promise<void> => {
                 greenApiInstanceId: null,
                 greenApiToken: null,
                 createdAt: new Date(),
-                updatedAt: new Date()
+                updatedAt: new Date(),
+                lastActive: new Date()
             };
         } else if (!user.isVerified) {
             await db.update(users).set({ isVerified: true }).where(eq(users.id, user.id));
@@ -280,12 +283,14 @@ export const googleOAuth = async (req: Request, res: Response): Promise<void> =>
             // Create user
             const [insertResult] = await db.insert(users).values({
                 email,
+                name: payload.name || null,
                 password: null, // No password for OAuth users
                 isVerified: true, // OAuth emails are pre-verified by provider
             });
             user = {
                 id: insertResult.insertId,
                 email,
+                name: payload.name || null,
                 password: null,
                 isVerified: true,
                 isTwoFactorEnabled: false,
@@ -293,7 +298,8 @@ export const googleOAuth = async (req: Request, res: Response): Promise<void> =>
                 greenApiInstanceId: null,
                 greenApiToken: null,
                 createdAt: new Date(),
-                updatedAt: new Date()
+                updatedAt: new Date(),
+                lastActive: new Date()
             };
         } else if (user.isTwoFactorEnabled) {
             // Standard 2FA logic if user is already enrolled, though usually OAuth bypasses 2FA 

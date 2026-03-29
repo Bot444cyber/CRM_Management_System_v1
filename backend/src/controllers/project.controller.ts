@@ -666,7 +666,8 @@ export const getWorkspaceMembers = async (req: Request, res: Response): Promise<
                 userId: workspaceMembers.userId,
                 role: workspaceMembers.role,
                 joinedAt: workspaceMembers.joinedAt,
-                userName: sql`COALESCE(${users.name}, SUBSTRING_INDEX(${users.email}, '@', 1))`,
+                name: users.name,
+                userName: sql`COALESCE(NULLIF(${users.name}, ''), SUBSTRING_INDEX(${users.email}, '@', 1))`,
                 email: users.email,
                 userRole: users.role
             })

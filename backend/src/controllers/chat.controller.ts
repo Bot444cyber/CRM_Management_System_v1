@@ -159,7 +159,7 @@ export const getMessages = async (req: Request, res: Response): Promise<void> =>
                 senderId: chatMessages.senderId,
                 content: chatMessages.content,
                 createdAt: chatMessages.createdAt,
-                senderName: sql`COALESCE(${users.name}, SUBSTRING_INDEX(${users.email}, '@', 1))`
+                senderName: sql`COALESCE(NULLIF(${users.name}, ''), SUBSTRING_INDEX(${users.email}, '@', 1))`
             })
             .from(chatMessages)
             .innerJoin(users, eq(chatMessages.senderId, users.id))
@@ -279,6 +279,7 @@ export const getWorkspaceMembers = async (req: Request, res: Response): Promise<
                 id: users.id,
                 name: users.name,
                 email: users.email,
+                userName: sql`COALESCE(NULLIF(${users.name}, ''), SUBSTRING_INDEX(${users.email}, '@', 1))`,
                 role: workspaceMembers.role,
                 lastActive: users.lastActive,
             })

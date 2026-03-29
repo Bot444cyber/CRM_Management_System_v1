@@ -54,6 +54,7 @@ export const getProjectMembers = async (req: Request, res: Response): Promise<vo
                 joinedAt: projectMembers.joinedAt,
                 email: users.email,
                 name: users.name,
+                userName: sql`COALESCE(NULLIF(${users.name}, ''), SUBSTRING_INDEX(${users.email}, '@', 1))`,
                 systemRole: users.role,
             })
             .from(projectMembers)
@@ -444,6 +445,7 @@ export const getGlobalTeam = async (req: Request, res: Response): Promise<void> 
                 userId: users.id,
                 email: users.email,
                 name: users.name,
+                userName: sql`COALESCE(NULLIF(${users.name}, ''), SUBSTRING_INDEX(${users.email}, '@', 1))`,
                 role: workspaceMembers.role,
                 joinedAt: workspaceMembers.joinedAt,
                 workspaceName: workspaces.name,

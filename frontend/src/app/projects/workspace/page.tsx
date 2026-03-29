@@ -475,7 +475,7 @@ export default function WorkspaceDetailsPage() {
                                                                         {member.name || member.userName}
                                                                     </p>
                                                                     <p className="text-[10px] text-muted-foreground mt-1 font-medium lowercase tracking-tight truncate opacity-70">
-                                                                        {member.email || 'null'}
+                                                                        {member.email || 'id.inbound@node.local'}
                                                                     </p>
                                                                 </div>
                                                             </div>
