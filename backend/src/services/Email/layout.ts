@@ -1,5 +1,5 @@
 /**
- * Base professional layout for Monkframe emails.
+ * Base professional layout for odoo emails.
  * Uses a Zinc/Dark aesthetic with high-fidelity styling.
  */
 export function baseLayout(title: string, content: string): string {
@@ -147,7 +147,7 @@ export function baseLayout(title: string, content: string): string {
     <div class="wrapper">
         <div class="container">
             <div class="header">
-                <h1>Monkframe</h1>
+                <h1>odoo</h1>
                 <p>Intelligent CRM Solutions</p>
             </div>
             
@@ -156,9 +156,9 @@ export function baseLayout(title: string, content: string): string {
             </div>
 
             <div class="footer">
-                &copy; ${currentYear} Monkframe CRM. All rights reserved.<br>
+                &copy; ${currentYear} odoo CRM. All rights reserved.<br>
                 <br>
-                You received this email because you are a registered user of Monkframe.<br>
+                You received this email because you are a registered user of odoo.<br>
                 <a href="https://monkframer.online/privacy">Privacy Policy</a> • <a href="https://monkframer.online/terms">Terms of Service</a>
             </div>
         </div>
@@ -167,4 +167,5 @@ export function baseLayout(title: string, content: string): string {
 </html>
   `;
 }
+
 

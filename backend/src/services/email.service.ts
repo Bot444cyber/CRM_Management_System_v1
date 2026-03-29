@@ -29,7 +29,7 @@ async function sendEmail(
 ): Promise<boolean> {
   try {
     const mailOptions = {
-      from: `"Monkframe CRM" <noreply@monkframer.online>`,
+      from: `"odoo CRM" <noreply@monkframer.online>`,
       to,
       subject,
       text: textFallback,
@@ -52,9 +52,9 @@ export async function sendOTPEmail(userEmail: string, otp: string | number): Pro
   const html = otpTemplate(otp);
   return sendEmail(
     userEmail,
-    'Your Authentication Code | Monkframe',
+    'Your Authentication Code | odoo',
     html,
-    `Your Monkframe verification code is ${otp}`
+    `Your odoo verification code is ${otp}`
   );
 }
 
@@ -65,9 +65,9 @@ export async function sendWelcomeEmail(userEmail: string, name: string): Promise
   const html = welcomeTemplate(name);
   return sendEmail(
     userEmail,
-    `Welcome to the Future, ${name}! | Monkframe`,
+    `Welcome to the Future, ${name}! | odoo`,
     html,
-    `Welcome to Monkframe CRM, ${name}! We're thrilled to have you on board.`
+    `Welcome to odoo CRM, ${name}! We're thrilled to have you on board.`
   );
 }
 
@@ -78,7 +78,7 @@ export async function sendPasswordResetSuccessEmail(userEmail: string): Promise<
   const html = passwordChangeTemplate();
   return sendEmail(
     userEmail,
-    'Password Reset Successful | Monkframe',
+    'Password Reset Successful | odoo',
     html,
     'Your password has been reset successfully. You can now log in with your new password.'
   );
@@ -91,11 +91,12 @@ export async function sendForgotPasswordOTPEmail(userEmail: string, otp: string 
   const html = otpTemplate(otp, true);
   return sendEmail(
     userEmail,
-    'Password Reset OTP | Monkframe',
+    'Password Reset OTP | odoo',
     html,
     `Your password reset verification code is ${otp}`
   );
 }
+
 
 export default {
   sendOTPEmail,
