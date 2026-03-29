@@ -14,11 +14,11 @@ export function otpTemplate(otp: string | number, isForgotPassword = false): str
       ${otp}
     </div>
 
-    <p>This code will expire in 10 minutes. For your security, please do not share this code with anyone.</p>
+    <p style="font-size: 13px; color: #71717a; text-align: center;">This code will expire in 10 minutes. For your security, please do not share this code with anyone.</p>
     
     <div class="divider"></div>
     
-    <p style="font-size: 13px; color: #71717a;">If you did not request this code, you can safely ignore this email. Someone may have entered your email address by mistake.</p>
+    <p style="font-size: 12px; color: #52525b; line-height: 1.6;">If you did not request this code, you can safely ignore this email. Someone may have entered your email address by mistake.</p>
   `;
   return baseLayout(title, content);
 }
