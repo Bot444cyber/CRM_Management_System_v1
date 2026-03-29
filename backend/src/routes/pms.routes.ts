@@ -1,5 +1,5 @@
 import express from "express";
-import { getWorkspaces, createWorkspace, joinWorkspace, getWorkspace, updateWorkspace, deleteWorkspace, getProjects, createProject, getProject, updateProject, deleteProject, getWorkspaceMembers, updateWorkspaceMember, removeWorkspaceMember } from "../controllers/project.controller";
+import { getWorkspaces, createWorkspace, joinWorkspace, getWorkspace, updateWorkspace, deleteWorkspace, getProjects, createProject, getProject, updateProject, deleteProject, getWorkspaceMembers, updateWorkspaceMember, removeWorkspaceMember, inviteToWorkspace } from "../controllers/project.controller";
 
 import { reserveInventory, getResourceRequests, createResourceRequest, processResourceRequest } from "../controllers/resource.controller";
 import { getProjectMilestones, createProjectMilestone, updateProjectMilestone } from "../controllers/milestone.controller";
@@ -20,6 +20,7 @@ router.get("/workspaces", getWorkspaces);
 router.post("/workspaces", createWorkspace);  // Any authenticated user can create their own workspace
 router.post("/workspaces/join", joinWorkspace); // Join via pass-key
 router.get("/workspaces/:id/details", getWorkspace);   // Get workspace details
+router.post("/workspaces/:id/invite", inviteToWorkspace); // Send email invitations
 router.patch("/workspaces/:id", updateWorkspace); // Update workspace settings
 router.delete("/workspaces/:id", deleteWorkspace); // Delete workspace
 router.get("/reminders", getAllUserReminders); // Global reminders

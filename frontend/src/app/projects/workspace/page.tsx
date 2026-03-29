@@ -64,6 +64,9 @@ export default function WorkspaceDetailsPage() {
     const [projects, setProjects] = useState<Project[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [isInviting, setIsInviting] = useState(false);
+    const [inviteEmails, setInviteEmails] = useState("");
+    const [showInviteForm, setShowInviteForm] = useState(false);
 
     // Edit state
     const [editName, setEditName] = useState('');
@@ -129,6 +132,41 @@ export default function WorkspaceDetailsPage() {
             toast.error('Uplink failed: Update rejected');
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleBulkInvite = async () => {
+        if (!activeWorkspace || !inviteEmails.trim()) return;
+        setIsInviting(true);
+        try {
+            // Parse emails: split by comma or newline, trim and filter
+            const emails = inviteEmails
+                .split(/[,\n]/)
+                .map(e => e.trim())
+                .filter(e => e.includes('@'));
+
+            if (emails.length === 0) {
+                toast.error("No valid authorization targets detected");
+                setIsInviting(false);
+                return;
+            }
+
+            const res = await apiFetch(`${BACKEND_URL}/api/pms/workspaces/${activeWorkspace.id}/invite`, {
+                method: 'POST',
+                body: JSON.stringify({ emails })
+            });
+
+            if (res.ok) {
+                toast.success(`Authorization signals sent to ${emails.length} operatives`);
+                setInviteEmails("");
+                setShowInviteForm(false);
+            } else {
+                toast.error("Uplink timeout: Invitation sequence failed");
+            }
+        } catch (error) {
+            toast.error("Network disruption: Invitation failed");
+        } finally {
+            setIsInviting(false);
         }
     };
 
@@ -368,12 +406,51 @@ export default function WorkspaceDetailsPage() {
                                     <div className="p-6 border-b border-border flex items-center justify-between bg-accent/20">
                                         <h3 className="text-sm font-bold text-foreground uppercase tracking-widest">Operative Roster</h3>
                                         {isOwner && (
-                                            <button className="flex items-center gap-2 bg-background border border-border hover:bg-accent text-foreground px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-sm">
+                                            <button
+                                                onClick={() => setShowInviteForm(!showInviteForm)}
+                                                className="flex items-center gap-2 bg-background border border-border hover:bg-accent text-foreground px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-sm"
+                                            >
                                                 <UserPlus size={16} className="text-primary" />
-                                                <span>Invite Operative</span>
+                                                <span>{showInviteForm ? 'Close Interface' : 'Invite Operative'}</span>
                                             </button>
                                         )}
                                     </div>
+
+                                    <AnimatePresence>
+                                        {showInviteForm && (
+                                            <motion.div
+                                                initial={{ height: 0, opacity: 0 }}
+                                                animate={{ height: 'auto', opacity: 1 }}
+                                                exit={{ height: 0, opacity: 0 }}
+                                                className="overflow-hidden border-b border-border"
+                                            >
+                                                <div className="p-6 bg-accent/5 space-y-4">
+                                                    <div className="space-y-2">
+                                                        <label className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest px-1">Bulk Invite Operatives (Comma or one per line)</label>
+                                                        <textarea
+                                                            placeholder="agent.one@monkframer.online, agent.two@monkframer.online..."
+                                                            value={inviteEmails}
+                                                            onChange={e => setInviteEmails(e.target.value)}
+                                                            rows={3}
+                                                            className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:border-primary/50 transition-all resize-none"
+                                                        />
+                                                    </div>
+                                                    <div className="flex justify-end">
+                                                        <button
+                                                            disabled={isInviting || !inviteEmails.trim()}
+                                                            onClick={handleBulkInvite}
+                                                            className="flex items-center gap-2 bg-primary hover:opacity-90 text-primary-foreground text-[10px] font-bold py-2.5 px-6 rounded-xl transition-all shadow-lg shadow-primary/20 disabled:opacity-50 uppercase tracking-widest"
+                                                        >
+                                                            {isInviting ? (
+                                                                <div className="w-3 h-3 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                                                            ) : <UserPlus size={14} />}
+                                                            <span>Authorize Personnel</span>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
                                     <div className="overflow-x-auto">
                                         <table className="w-full text-left">
                                             <thead className="bg-accent/50 text-[10px] text-muted-foreground uppercase tracking-widest font-bold border-b border-border">

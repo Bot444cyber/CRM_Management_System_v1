@@ -3,6 +3,7 @@ import { db } from "../config/db";
 import { workspaces, projects, projectInventory, inventories, workspaceMembers, projectMembers, projectMilestones, projectPulse, resourceRequests, projectReminders, users } from "../db/schema";
 import { eq, and, or, sql, desc } from "drizzle-orm";
 import crypto from "crypto";
+import { sendWorkspaceInvitationEmail } from "../services/email.service";
 
 export const getWorkspaces = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -114,6 +115,60 @@ export const joinWorkspace = async (req: Request, res: Response): Promise<void> 
         res.status(200).json({ message: "Joined workspace successfully", workspaceId });
     } catch (error) {
         console.error("Error joining workspace:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+
+export const inviteToWorkspace = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id } = req.params; // workspaceId
+        const { emails } = req.body; // array of emails
+        const userId = req.user?.userId;
+
+        if (!userId) {
+            res.status(401).json({ message: "Unauthorized" });
+            return;
+        }
+
+        if (!emails || !Array.isArray(emails) || emails.length === 0) {
+            res.status(400).json({ message: "Emails are required and must be an array" });
+            return;
+        }
+
+        // 1. Verify caller has permission (Owner/Admin/Manager)
+        const membership = await db.select().from(workspaceMembers)
+            .where(and(eq(workspaceMembers.workspaceId, id as string), eq(workspaceMembers.userId, userId)))
+            .limit(1);
+
+        if (!membership.length || !['owner', 'admin', 'manager'].includes(membership[0].role)) {
+            res.status(403).json({ message: "Insufficient permissions to invite members" });
+            return;
+        }
+
+        // 2. Fetch workspace details
+        const wsRows = await db.select().from(workspaces).where(eq(workspaces.id, id as string)).limit(1);
+        if (!wsRows.length) {
+            res.status(404).json({ message: "Workspace not found" });
+            return;
+        }
+        const ws = wsRows[0];
+
+        // 3. Get Inviter Name
+        const inviterRows = await db.select({ name: users.name, email: users.email }).from(users).where(eq(users.id, userId)).limit(1);
+        const inviterName = inviterRows[0]?.name || inviterRows[0]?.email?.split('@')[0] || "A Team Lead";
+
+        // 4. Send Emails in Bulk
+        const results = await Promise.all(emails.map(async (email) => {
+            const success = await sendWorkspaceInvitationEmail(email, ws.name || "Workspace", ws.passKey || "", inviterName);
+            return { email, success };
+        }));
+
+        res.status(200).json({
+            message: "Invitations processed",
+            results
+        });
+    } catch (error) {
+        console.error("Error inviting to workspace:", error);
         res.status(500).json({ message: "Server error" });
     }
 };

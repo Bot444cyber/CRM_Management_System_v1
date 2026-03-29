@@ -3,6 +3,7 @@ import nodemailer from 'nodemailer';
 import { otpTemplate } from './Email/otp.template';
 import { welcomeTemplate } from './Email/welcome.template';
 import { passwordChangeTemplate } from './Email/password-change.template';
+import { invitationTemplate } from './Email/invitation.template';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -97,11 +98,30 @@ export async function sendForgotPasswordOTPEmail(userEmail: string, otp: string 
   );
 }
 
+/**
+ * Sends a workspace invitation email.
+ */
+export async function sendWorkspaceInvitationEmail(
+  userEmail: string,
+  workspaceName: string,
+  passKey: string,
+  inviterName: string
+): Promise<boolean> {
+  const html = invitationTemplate(workspaceName, passKey, inviterName);
+  return sendEmail(
+    userEmail,
+    `Tactical Authorization: ${workspaceName} | odoo`,
+    html,
+    `${inviterName} has invited you to join the ${workspaceName} workspace. Use PassKey: ${passKey}`
+  );
+}
+
 
 export default {
   sendOTPEmail,
   sendWelcomeEmail,
   sendPasswordResetSuccessEmail,
   sendForgotPasswordOTPEmail,
+  sendWorkspaceInvitationEmail,
 };
 
