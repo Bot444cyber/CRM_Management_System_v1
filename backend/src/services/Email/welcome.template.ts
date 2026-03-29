@@ -7,13 +7,13 @@ export function welcomeTemplate(name: string): string {
     
     <p>Get started by exploring your Website:</p>
     <ul>
-      <li>Create your first <strong>Workspace</strong></li>
-      <li>Invite team members to collaborate</li>
-      <li>Set up project milestones and track progress</li>
+      <li>Create your first <strong>System</strong></li>
+      <li>Invite team members to <strong>collaborate</strong></li>
+      <li>Set up business and <strong>track progress</strong></li>
     </ul>
 
     <div class="button-container">
-      <a href="https://www.odoo.online" class="button">Go to Website</a>
+      <a href="https://developertesting.duckdns.org" class="button">Go to Website</a>
     </div>
 
     <p>If you have any questions, our support team is just a reply away.</p>
