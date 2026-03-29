@@ -27,8 +27,8 @@ interface WorkspaceMember {
     userRole: string;
 }
 
-const formatName = (name: string | null, email: string) => {
-    if (name) return name;
+const formatName = (name: string | null | undefined, email: string | null | undefined) => {
+    if (name && name !== email) return name;
     if (!email) return 'Unknown Operative';
     const prefix = email.split('@')[0];
     return prefix
@@ -471,8 +471,12 @@ export default function WorkspaceDetailsPage() {
                                                                     {getInitials(member.name || member.email || member.userName)}
                                                                 </div>
                                                                 <div className="min-w-0">
-                                                                    <p className="text-sm font-bold text-foreground leading-none truncate">{formatName(member.name || null, member.email || member.userName)}</p>
-                                                                    <p className="text-[10px] text-muted-foreground mt-1 font-mono uppercase tracking-tighter truncate">{member.email || 'OPERATIVE ID INBOUND'}</p>
+                                                                    <p className="text-sm font-bold text-foreground leading-none truncate">
+                                                                        {member.name || member.userName}
+                                                                    </p>
+                                                                    <p className="text-[10px] text-muted-foreground mt-1 font-medium lowercase tracking-tight truncate opacity-70">
+                                                                        {member.email || 'null'}
+                                                                    </p>
                                                                 </div>
                                                             </div>
                                                         </td>
