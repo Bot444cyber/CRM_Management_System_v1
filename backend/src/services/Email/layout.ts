@@ -17,27 +17,27 @@ export function baseLayout(title: string, content: string): string {
             margin: 0;
             padding: 0;
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: #0c0c0e;
-            color: #ffffff;
+            background-color: #f8fafc;
+            color: #18181b;
             -webkit-font-smoothing: antialiased;
         }
 
         .wrapper {
             width: 100%;
             table-layout: fixed;
-            background-color: #0c0c0e;
+            background-color: #f8fafc;
             padding-bottom: 40px;
         }
 
         .container {
             max-width: 600px;
             margin: 0 auto;
-            background-color: #121214;
+            background-color: #ffffff;
             border-radius: 16px;
             overflow: hidden;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             margin-top: 40px;
-            border: 1px solid #27272a;
+            border: 1px solid #e2e8f0;
         }
 
         /* Header */
@@ -45,7 +45,6 @@ export function baseLayout(title: string, content: string): string {
             background-color: #09090b;
             padding: 32px;
             text-align: center;
-            border-bottom: 1px solid #1e1e21;
         }
 
         .header h1 {
@@ -76,18 +75,18 @@ export function baseLayout(title: string, content: string): string {
             margin-top: 0;
             font-size: 22px;
             font-weight: 700;
-            color: #ffffff;
+            color: #09090b;
             margin-bottom: 16px;
         }
 
         .content p {
             margin-bottom: 24px;
-            color: #a1a1aa;
+            color: #3f3f46;
             font-size: 15px;
         }
 
         .content strong {
-            color: #ffffff;
+            color: #09090b;
         }
 
         /* Button */
@@ -98,8 +97,8 @@ export function baseLayout(title: string, content: string): string {
 
         .button {
             display: inline-block;
-            background-color: #ffffff;
-            color: #000000 !important;
+            background-color: #09090b;
+            color: #ffffff !important;
             padding: 14px 28px;
             border-radius: 8px;
             text-decoration: none;
@@ -115,26 +114,26 @@ export function baseLayout(title: string, content: string): string {
             padding: 32px;
             text-align: center;
             font-size: 12px;
-            color: #52525b;
-            background-color: #0c0c0e;
-            border-top: 1px solid #1e1e21;
+            color: #71717a;
+            background-color: #fafafa;
+            border-top: 1px solid #f1f5f9;
         }
 
         .footer a {
-            color: #a1a1aa;
+            color: #09090b;
             text-decoration: none;
             font-weight: 500;
         }
 
         .footer a:hover {
-            color: #ffffff;
+            color: #000000;
             text-decoration: underline;
         }
 
         /* Utils */
         .code-box {
-            background-color: rgba(255, 255, 255, 0.03);
-            border: 1px solid #27272a;
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
             padding: 24px;
             border-radius: 12px;
             text-align: center;
@@ -158,7 +157,7 @@ export function baseLayout(title: string, content: string): string {
 
         .divider {
             height: 1px;
-            background-color: #1e1e21;
+            background-color: #e2e8f0;
             margin: 24px 0;
         }
 

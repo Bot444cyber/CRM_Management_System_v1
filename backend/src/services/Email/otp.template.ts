@@ -18,7 +18,7 @@ export function otpTemplate(otp: string | number, isForgotPassword = false): str
     
     <div class="divider"></div>
     
-    <p style="font-size: 12px; color: #52525b; line-height: 1.6;">If you did not request this code, you can safely ignore this email. Someone may have entered your email address by mistake.</p>
+    <p style="font-size: 12px; color: #71717a; line-height: 1.6;">If you did not request this code, you can safely ignore this email. Someone may have entered your email address by mistake.</p>
   `;
   return baseLayout(title, content);
 }

@@ -7,7 +7,7 @@ export function passwordChangeTemplate(): string {
     
     <div class="divider"></div>
 
-    <p>Best regards,<br><strong>odoo</strong> Team</p>
+    <p>Best regards,<br>The <strong>odoo</strong> Team</p>
   `;
   return baseLayout('Password Changed Successfully', content);
 }
