@@ -161,7 +161,7 @@ function LoginContent() {
                                     <div className="w-3.5 h-3.5 bg-white rounded-full" />
                                 </div>
                             </div>
-                            <span className="font-semibold text-2xl tracking-tight text-white drop-shadow-md">Nexus</span>
+                            <span className="font-semibold text-2xl tracking-tight text-white drop-shadow-md">odoo</span>
                         </Link>
                     </div>
 
@@ -180,9 +180,10 @@ function LoginContent() {
                             transition={{ duration: 0.8, delay: 0.1 }}
                             className="text-white/70 text-lg max-w-md font-light leading-relaxed"
                         >
-                            Global management made simple. Powerful online CRM solutions tailored for your scale.
+                            Global management made simple. Intelligent CRM solutions tailored for your scale.
                         </motion.p>
                     </div>
+
                 </div>
             </div>
 
@@ -193,9 +194,10 @@ function LoginContent() {
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.03)_0%,transparent_80%)] pointer-events-none" />
 
                 <div className="absolute top-8 right-8 text-sm z-20">
-                    <span className="text-white/40">New to Nexus? </span>
+                    <span className="text-white/40">New to odoo? </span>
                     <Link href="/register" className="text-white hover:text-white/80 transition-colors font-medium border-b border-transparent hover:border-white pb-0.5">Sign Up</Link>
                 </div>
+
 
                 <div className="w-full max-w-[400px] mx-auto lg:ml-auto lg:mr-24 relative z-10">
                     {/* Mobile Logo */}
@@ -205,8 +207,9 @@ function LoginContent() {
                                 <div className="w-3.5 h-3.5 bg-white rounded-full" />
                             </div>
                         </div>
-                        <span className="font-semibold text-2xl tracking-tight text-white">Nexus</span>
+                        <span className="font-semibold text-2xl tracking-tight text-white">odoo</span>
                     </Link>
+
 
                     {step === 'login' ? (
                         <motion.div
@@ -269,16 +272,19 @@ function LoginContent() {
                             </form>
 
                             <div className="mt-10 flex justify-center w-full">
-                                <div className="w-full h-[54px] rounded-xl overflow-hidden [&>div]:w-full [&>div>div]:w-full!">
+                                <div className="w-full h-[54px] rounded-xl overflow-hidden shadow-[0_0_15px_rgba(255,255,255,0.02)] border border-white/5">
                                     <GoogleLogin
                                         onSuccess={handleGoogleSuccess}
                                         onError={() => toast.error('Google Authentication Failed')}
                                         theme="filled_black"
                                         size="large"
                                         shape="pill"
+                                        width="384px"
+                                        use_fedcm_for_prompt={true}
                                     />
                                 </div>
                             </div>
+
                         </motion.div>
                     ) : (
                         <motion.div
@@ -331,7 +337,8 @@ function LoginContent() {
 
                 {/* Footer links */}
                 <div className="absolute bottom-8 right-8 left-8 lg:left-0 lg:pl-20 text-[11px] text-white/30 font-medium flex justify-between items-center z-20">
-                    <div>© 2005-2025 Nexus Inc.</div>
+                    <div>© 2005-2025 odoo CRM Inc.</div>
+
                     <div className="flex gap-4 sm:gap-6 items-center">
                         <Link href="#" className="hover:text-white transition-colors hidden sm:block">Privacy</Link>
                         <Link href="#" className="hover:text-white transition-colors hidden sm:block">Terms</Link>

@@ -141,7 +141,8 @@ export default function AboutPage() {
                     className="border border-white/10 rounded-[2.5rem] p-8 sm:p-12 bg-[#0c0c10] relative overflow-hidden flex flex-col items-center text-center group hover:bg-white hover:text-black transition-all duration-700 hover:shadow-2xl hover:shadow-white/20 cursor-default"
                 >
                     <Building className="w-12 h-12 text-white/20 group-hover:text-black/20 transition-colors duration-700 mb-8" />
-                    <h2 className="text-2xl sm:text-3xl font-bold mb-8 sm:mb-12 group-hover:text-black transition-colors duration-700">NexusCRM by the numbers</h2>
+                    <h2 className="text-2xl sm:text-3xl font-bold mb-8 sm:mb-12 group-hover:text-black transition-colors duration-700">odoo CRM by the numbers</h2>
+
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-12 w-full max-w-4xl border-t border-white/10 group-hover:border-black/10 pt-8 sm:pt-12 transition-colors duration-700">
                         <div>

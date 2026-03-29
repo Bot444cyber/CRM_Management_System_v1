@@ -156,8 +156,9 @@ function ForgotPasswordContent() {
                                     <div className="w-3.5 h-3.5 bg-white rounded-full" />
                                 </div>
                             </div>
-                            <span className="font-semibold text-2xl tracking-tight text-white drop-shadow-md">Nexus</span>
+                            <span className="font-semibold text-2xl tracking-tight text-white drop-shadow-md">odoo</span>
                         </Link>
+
                     </div>
 
                     <div className="max-w-xl">
@@ -324,7 +325,8 @@ function ForgotPasswordContent() {
                 </div>
 
                 <div className="absolute bottom-8 right-8 left-8 lg:left-0 lg:pl-20 text-[11px] text-white/30 font-medium flex justify-between items-center z-20">
-                    <div>© 2005-2025 Nexus Inc.</div>
+                    <div>© 2005-2025 odoo CRM Inc.</div>
+
                 </div>
             </div>
         </main>

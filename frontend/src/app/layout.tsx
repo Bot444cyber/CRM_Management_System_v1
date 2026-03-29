@@ -16,9 +16,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NexusCRM | Powering Every Surface Area",
+  title: "odoo CRM | Intelligent Management Solutions",
   description: "The ultimate platform for smart dashboards, lead management, and seamless integrations. Run your entire operation from one powerful CRM.",
 };
+
 
 import { SyncProvider } from '@/context/SyncContext';
 

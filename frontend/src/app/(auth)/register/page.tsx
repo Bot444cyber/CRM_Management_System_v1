@@ -160,7 +160,7 @@ function RegisterContent() {
                                     <div className="w-3.5 h-3.5 bg-white rounded-full" />
                                 </div>
                             </div>
-                            <span className="font-semibold text-2xl tracking-tight text-white drop-shadow-md">Nexus</span>
+                            <span className="font-semibold text-2xl tracking-tight text-white drop-shadow-md">odoo</span>
                         </Link>
                     </div>
 
@@ -179,9 +179,10 @@ function RegisterContent() {
                             transition={{ duration: 0.8, delay: 0.1 }}
                             className="text-white/70 text-lg max-w-md font-light leading-relaxed"
                         >
-                            Get started today and unlock the full potential of your business ecosystem.
+                            Get started today and unlock the full potential of your odoo ecosystem.
                         </motion.p>
                     </div>
+
                 </div>
             </div>
 
@@ -204,8 +205,9 @@ function RegisterContent() {
                                 <div className="w-3.5 h-3.5 bg-white rounded-full" />
                             </div>
                         </div>
-                        <span className="font-semibold text-2xl tracking-tight text-white">Nexus</span>
+                        <span className="font-semibold text-2xl tracking-tight text-white">odoo</span>
                     </Link>
+
 
                     <AnimatePresence mode="wait">
                         {step === 'register' ? (
@@ -217,7 +219,8 @@ function RegisterContent() {
                                 transition={{ duration: 0.3 }}
                             >
                                 <h2 className="text-4xl font-medium tracking-tight mb-2">Sign Up</h2>
-                                <p className="text-white/40 mb-10 text-[15px]">Create your Nexus account today.</p>
+                                <p className="text-white/40 mb-10 text-[15px]">Create your odoo account today.</p>
+
 
                                 <form onSubmit={handleRegisterSubmit} className="space-y-4">
                                     <div>
@@ -274,7 +277,7 @@ function RegisterContent() {
                                 </form>
 
                                 <div className="mt-10 flex justify-center w-full">
-                                    <div className="w-full h-[54px] rounded-xl overflow-hidden [&>div]:w-full [&>div>div]:w-full!">
+                                    <div className="w-full h-[54px] rounded-xl overflow-hidden shadow-[0_0_15px_rgba(255,255,255,0.02)] border border-white/5">
                                         <GoogleLogin
                                             onSuccess={handleGoogleSuccess}
                                             onError={() => toast.error('Google Authentication Failed')}
@@ -282,9 +285,12 @@ function RegisterContent() {
                                             theme="filled_black"
                                             size="large"
                                             shape="pill"
+                                            width="384px"
+                                            use_fedcm_for_prompt={true}
                                         />
                                     </div>
                                 </div>
+
                             </motion.div>
                         ) : (
                             <motion.div
@@ -338,7 +344,8 @@ function RegisterContent() {
 
                 {/* Footer links */}
                 <div className="absolute bottom-8 right-8 left-8 lg:left-0 lg:pl-20 text-[11px] text-white/30 font-medium flex justify-between items-center z-20">
-                    <div>© 2005-2025 Nexus Inc.</div>
+                    <div>© 2005-2025 odoo CRM Inc.</div>
+
                     <div className="flex gap-4 sm:gap-6 items-center">
                         <Link href="#" className="hover:text-white transition-colors hidden sm:block">Privacy</Link>
                         <Link href="#" className="hover:text-white transition-colors hidden sm:block">Terms</Link>
