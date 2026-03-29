@@ -1,36 +1,35 @@
 import dotenv from 'dotenv';
 import nodemailer from 'nodemailer';
-import { getTemplate } from '../utils/template.utils';
+import { otpTemplate } from './Email/otp.template';
+import { welcomeTemplate } from './Email/welcome.template';
+import { passwordChangeTemplate } from './Email/password-change.template';
 
 // Load environment variables from .env file
 dotenv.config();
 
 // Create a reusable transporter object using the default SMTP transport
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT),
+  host: process.env.SMTP_HOST || 'live.smtp.mailtrap.io',
+  port: Number(process.env.SMTP_PORT) || 587,
   secure: Number(process.env.SMTP_PORT) === 465,
   auth: {
     user: process.env.SMTP_USER,
-    pass: process.env.SMTP_TOKKEN,
+    pass: process.env.SMTP_TOKKEN, // Matching .env typo
   },
 });
 
 /**
- * Generic helper to send emails using templates.
+ * Generic helper to send emails.
  */
 async function sendEmail(
   to: string,
   subject: string,
-  templateName: string,
-  templateData: Record<string, string | number>,
+  html: string,
   textFallback: string
 ): Promise<boolean> {
   try {
-    const html = getTemplate(templateName, templateData);
-
     const mailOptions = {
-      from: `"Nexus Inventory | SAAS" <noreply@monkframer.online>`,
+      from: `"Monkframe CRM" <noreply@monkframer.online>`,
       to,
       subject,
       text: textFallback,
@@ -38,10 +37,10 @@ async function sendEmail(
     };
 
     const info = await transporter.sendMail(mailOptions);
-    console.log(`✅ Email [${templateName}] sent:`, info.messageId);
+    console.log(`✅ Email [${subject}] sent:`, info.messageId);
     return true;
   } catch (error: unknown) {
-    console.error(`❌ Error sending email [${templateName}]:`, error instanceof Error ? error.message : error);
+    console.error(`❌ Error sending email [${subject}]:`, error instanceof Error ? error.message : error);
     return false;
   }
 }
@@ -50,12 +49,12 @@ async function sendEmail(
  * Sends a professional OTP email.
  */
 export async function sendOTPEmail(userEmail: string, otp: string | number): Promise<boolean> {
+  const html = otpTemplate(otp);
   return sendEmail(
     userEmail,
-    'Your Authentication Code | Nexus',
-    'otp.html',
-    { otp },
-    `Your Nexus Inventory verification code is ${otp}`
+    'Your Authentication Code | Monkframe',
+    html,
+    `Your Monkframe verification code is ${otp}`
   );
 }
 
@@ -63,13 +62,12 @@ export async function sendOTPEmail(userEmail: string, otp: string | number): Pro
  * Sends a welcome email to new users.
  */
 export async function sendWelcomeEmail(userEmail: string, name: string): Promise<boolean> {
-  const loginUrl = process.env.FRONTEND_URL || 'https://nexus-inventory.com/login';
+  const html = welcomeTemplate(name);
   return sendEmail(
     userEmail,
-    `Welcome to the Future, ${name}! | Nexus`,
-    'welcome.html',
-    { name, loginUrl },
-    `Welcome to Nexus Inventory, ${name}! We're thrilled to have you on board.`
+    `Welcome to the Future, ${name}! | Monkframe`,
+    html,
+    `Welcome to Monkframe CRM, ${name}! We're thrilled to have you on board.`
   );
 }
 
@@ -77,12 +75,11 @@ export async function sendWelcomeEmail(userEmail: string, name: string): Promise
  * Sends a password reset notification after success.
  */
 export async function sendPasswordResetSuccessEmail(userEmail: string): Promise<boolean> {
-  const loginUrl = `${process.env.FRONTEND_URL || 'https://nexus-inventory.com'}/login`;
+  const html = passwordChangeTemplate();
   return sendEmail(
     userEmail,
-    'Password Reset Successful | Nexus',
-    'reset-password.html',
-    { loginUrl },
+    'Password Reset Successful | Monkframe',
+    html,
     'Your password has been reset successfully. You can now log in with your new password.'
   );
 }
@@ -91,11 +88,11 @@ export async function sendPasswordResetSuccessEmail(userEmail: string): Promise<
  * Sends an OTP for password reset.
  */
 export async function sendForgotPasswordOTPEmail(userEmail: string, otp: string | number): Promise<boolean> {
+  const html = otpTemplate(otp, true);
   return sendEmail(
     userEmail,
-    'Password Reset OTP | Nexus',
-    'otp.html',
-    { otp },
+    'Password Reset OTP | Monkframe',
+    html,
     `Your password reset verification code is ${otp}`
   );
 }
@@ -104,5 +101,6 @@ export default {
   sendOTPEmail,
   sendWelcomeEmail,
   sendPasswordResetSuccessEmail,
-  sendForgotPasswordOTPEmail
+  sendForgotPasswordOTPEmail,
 };
+
