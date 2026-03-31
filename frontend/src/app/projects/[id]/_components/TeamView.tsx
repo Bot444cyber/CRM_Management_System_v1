@@ -54,15 +54,18 @@ export const getInitials = (nameOrEmail: string) => {
     return parts[0]?.substring(0, 2).toUpperCase() || '??';
 };
 
-export default function TeamView({ projectId, workspaceId, currentUserRole = 'developer', refresh }: {
+export default function TeamView({ projectId, workspaceId, members: propsMembers, invitation: propsInvitation, currentUserRole = 'developer', refresh }: {
     projectId: string;
     workspaceId?: string;
+    members?: any[];
+    invitation?: any;
     currentUserRole?: string;
     refresh: () => void;
 }) {
     const { triggerRefresh } = useSync();
-    const [members, setMembers] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [members, setMembers] = useState<any[]>(propsMembers || []);
+    const [invitation, setInvitation] = useState<any>(propsInvitation || null);
+    const [loading, setLoading] = useState(!propsMembers);
     const [showAdd, setShowAdd] = useState(false);
     const [newUserId, setNewUserId] = useState('');
     const [newRole, setNewRole] = useState('developer');
@@ -70,19 +73,28 @@ export default function TeamView({ projectId, workspaceId, currentUserRole = 'de
     const [userSearch, setUserSearch] = useState('');
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [searching, setSearching] = useState(false);
-    const [invitation, setInvitation] = useState<any>(null);
     const [workspaceMembers, setWorkspaceMembers] = useState<any[]>([]);
 
     const canManage = ['admin', 'manager'].includes(currentUserRole);
 
     useEffect(() => {
-        if (projectId) {
+        if (propsMembers) {
+            setMembers(propsMembers);
+            setLoading(false);
+        }
+        if (propsInvitation) {
+            setInvitation(propsInvitation);
+        }
+    }, [propsMembers, propsInvitation]);
+
+    useEffect(() => {
+        if (projectId && !propsMembers) {
             fetchMembers();
             if (canManage) {
                 fetchInvitation();
             }
         }
-    }, [projectId, canManage]);
+    }, [projectId, canManage, propsMembers]);
 
     useEffect(() => {
         const delayDebounceFn = setTimeout(() => {

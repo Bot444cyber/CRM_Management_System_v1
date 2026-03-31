@@ -1,5 +1,5 @@
 import express from "express";
-import { getWorkspaces, createWorkspace, joinWorkspace, getWorkspace, updateWorkspace, deleteWorkspace, getProjects, createProject, getProject, updateProject, deleteProject, getWorkspaceMembers, updateWorkspaceMember, removeWorkspaceMember, inviteToWorkspace } from "../controllers/project.controller";
+import { getWorkspaces, createWorkspace, joinWorkspace, getWorkspace, updateWorkspace, deleteWorkspace, getProjects, createProject, getProject, getProjectDashboardData, updateProject, deleteProject, getWorkspaceMembers, updateWorkspaceMember, removeWorkspaceMember, inviteToWorkspace } from "../controllers/project.controller";
 
 import { reserveInventory, getResourceRequests, createResourceRequest, processResourceRequest } from "../controllers/resource.controller";
 import { getProjectMilestones, createProjectMilestone, updateProjectMilestone } from "../controllers/milestone.controller";
@@ -36,6 +36,7 @@ router.get("/analytics/summary", getPMSSummary); // Aggregated PMS intelligence 
 router.get("/workspaces/:workspaceId", getProjects);           // All roles: view
 router.post("/", authorizeRoles("admin", "manager", "user"), createProject);    // Any owner can create
 router.get("/:id", getProject);                                // All roles: view
+router.get("/:id/dashboard", getProjectDashboardData);         // Consolidated dashboard data
 router.put("/:id", authorizeRoles("admin", "manager", "user"), updateProject);  // Owner+ update
 router.patch("/:id", authorizeRoles("admin", "manager", "user"), updateProject); // Kanban/Partial update
 router.delete("/:id", authorizeRoles("admin", "manager", "user"), deleteProject); // Owner+ delete

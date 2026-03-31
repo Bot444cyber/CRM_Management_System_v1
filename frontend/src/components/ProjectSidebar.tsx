@@ -197,12 +197,15 @@ export default function ProjectSidebar() {
             const fetchActive = async () => {
                 try {
                     const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pms/${activeProjectId}`);
-                    if (res.ok) setActiveProject(await res.json());
+                    if (res.ok) {
+                        const data = await res.json();
+                        setActiveProject(data);
+                        setMembers(data.members || []);
+                        setMilestones(data.milestones || []);
+                    }
                 } catch (e) { console.error(e); }
             };
             fetchActive();
-            fetchMembers();
-            fetchMilestones();
         } else {
             setActiveProject(null);
             setMembers([]);

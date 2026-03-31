@@ -459,6 +459,61 @@ export const getProjects = async (req: Request, res: Response): Promise<void> =>
     }
 };
 
+export const getProjectDashboardData = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id } = req.params; // projectId
+        const userId = req.user?.userId;
+        if (!userId) {
+            res.status(401).json({ message: "Unauthorized" });
+            return;
+        }
+
+        // Fetch everything in parallel via one DB connection pool session
+        const [projectRows, mRows, rRows, remRows, pulseRows, memRows] = await Promise.all([
+            db.select().from(projects).where(eq(projects.id, id as string)).limit(1),
+            db.select().from(projectMilestones).where(eq(projectMilestones.projectId, id as string)),
+            db.select().from(resourceRequests).where(eq(resourceRequests.projectId, id as string)),
+            db.select().from(projectReminders).where(eq(projectReminders.projectId, id as string)),
+            db.select().from(projectPulse).where(eq(projectPulse.projectId, id as string)).orderBy(desc(projectPulse.time)).limit(20),
+            db.select({
+                id: projectMembers.id,
+                userId: projectMembers.userId,
+                role: projectMembers.role,
+                projectRole: projectMembers.role,
+                name: users.name,
+                email: users.email
+            }).from(projectMembers).innerJoin(users, eq(projectMembers.userId, users.id)).where(eq(projectMembers.projectId, id as string))
+        ]);
+
+        if (!projectRows.length) {
+            res.status(404).json({ message: "Project not found" });
+            return;
+        }
+
+        const prj = projectRows[0];
+        const ws = (await db.select().from(workspaces).where(eq(workspaces.id, prj.workspaceId)).limit(1))[0];
+        const userRows = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+
+        // Fetch Invitation separately (to satisfy TeamView)
+        const { projectInvitations } = await import("../db/schema");
+        const inviteRows = await db.select().from(projectInvitations).where(eq(projectInvitations.projectId, id as string)).limit(1);
+
+        // Combine into one efficient object
+        res.status(200).json({
+            project: { ...prj, workspace: ws, invitation: inviteRows[0] || null },
+            milestones: mRows,
+            requests: rRows,
+            reminders: remRows,
+            pulse: pulseRows,
+            members: memRows,
+            currentUser: userRows.length > 0 ? userRows[0] : null
+        });
+    } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+
 export const getProject = async (req: Request, res: Response): Promise<void> => {
     try {
         const { id } = req.params;
@@ -530,13 +585,27 @@ export const getProject = async (req: Request, res: Response): Promise<void> => 
             });
         }
 
+        // Fetch everything for sidebar context in parallel
+        const { projectMilestones, users: schemaUsers } = await import("../db/schema");
+        const [mRows, memRows] = await Promise.all([
+            db.select().from(projectMilestones).where(eq(projectMilestones.projectId, id as string)),
+            db.select({
+                userId: projectMembers.userId,
+                projectRole: projectMembers.role,
+                name: schemaUsers.name,
+                email: schemaUsers.email
+            }).from(projectMembers).innerJoin(schemaUsers, eq(projectMembers.userId, schemaUsers.id)).where(eq(projectMembers.projectId, id as string))
+        ]);
+
         const ws = (await db.select().from(workspaces).where(eq(workspaces.id, prj.workspaceId)).limit(1))[0];
 
         res.status(200).json({
             ...prj,
             workspace: ws,
             resources: resourceDetails,
-            totalResourceCost: totalCost
+            totalResourceCost: totalCost,
+            members: memRows,
+            milestones: mRows
         });
     } catch (error) {
         console.error("Error fetching project:", error);

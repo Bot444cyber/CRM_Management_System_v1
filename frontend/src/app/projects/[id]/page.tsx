@@ -120,28 +120,22 @@ export default function ProjectDashboardPage() {
     const fetchProjectData = async () => {
         try {
             setLoading(true);
-            const [pRes, mRes, rRes, remRes, pulseRes, meRes, memRes] = await Promise.all([
-                apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pms/${projectId}`),
-                apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pms/${projectId}/milestones`),
-                apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pms/${projectId}/resource-requests`),
-                apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pms/${projectId}/reminders`),
-                apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pms/${projectId}/pulse`),
-                apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/me`),
-                apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pms/${projectId}/members`),
-            ]);
-            if (pRes.ok) setProject(await pRes.json());
-            if (mRes.ok) setMilestones(await mRes.json());
-            if (rRes.ok) setRequests(await rRes.json());
-            if (remRes.ok) setReminders(await remRes.json());
-            if (pulseRes.ok) setPulse(await pulseRes.json());
-            if (meRes.ok) {
-                const meData = await meRes.json();
-                setCurrentUser(meData.user);
+            const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pms/${projectId}/dashboard`);
+            if (res.ok) {
+                const data = await res.json();
+                setProject(data.project);
+                setMilestones(data.milestones);
+                setRequests(data.requests);
+                setReminders(data.reminders);
+                setPulse(data.pulse);
+                setMembers(data.members);
+                setCurrentUser(data.currentUser);
+            } else {
+                toast.error("Failed to sync dashboard");
             }
-            if (memRes.ok) setMembers(await memRes.json());
         } catch (e) {
             console.error(e);
-            toast.error("Failed to sync project data");
+            toast.error("Network error syncing project data");
         } finally {
             setLoading(false);
         }
@@ -535,8 +529,8 @@ export default function ProjectDashboardPage() {
                     <div className="pb-20 h-full">
                         {activeTab === 'milestones' && <MilestoneView projectId={projectId} milestones={milestones} members={members} currentUser={currentUser} currentUserRole={currentUserRole} refresh={fetchMilestones} viewMode={activeView as any} />}
                         {activeTab === 'resources' && <ResourceView projectId={projectId} requests={requests} currentUserRole={currentUserRole} refresh={fetchProjectData} />}
-                        {activeTab === 'team' && <TeamView projectId={projectId} workspaceId={project.workspaceId} currentUserRole={currentUserRole} refresh={fetchProjectData} />}
-                        {activeTab === 'pulse' && <PulseView projectId={projectId} />}
+                        {activeTab === 'team' && <TeamView projectId={projectId} workspaceId={project.workspaceId} members={members} invitation={project.invitation} currentUserRole={currentUserRole} refresh={fetchProjectData} />}
+                        {activeTab === 'pulse' && <PulseView projectId={projectId} pulse={pulse} />}
                         {activeTab === 'settings' && <SettingsView projectId={projectId} project={project} currentUserRole={currentUserRole} refresh={fetchProjectData} />}
                     </div>
                 </div>

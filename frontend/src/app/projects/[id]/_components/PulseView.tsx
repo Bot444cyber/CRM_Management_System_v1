@@ -8,9 +8,15 @@ import { useSync } from '@/context/SyncContext';
 import { cn } from '@/lib/utils';
 import { apiFetch } from '@/lib/apiFetch';
 
-export default function PulseView({ projectId }: { projectId: string }) {
-    const [events, setEvents] = useState<any[]>([]);
+export default function PulseView({ projectId, pulse: propsPulse }: { projectId: string, pulse?: any[] }) {
+    const [events, setEvents] = useState<any[]>(propsPulse || []);
     const { refreshSignal } = useSync();
+
+    useEffect(() => {
+        if (propsPulse) {
+            setEvents(propsPulse.sort((a: any, b: any) => new Date(b.time).getTime() - new Date(a.time).getTime()));
+        }
+    }, [propsPulse]);
 
     const fetchPulse = async () => {
         try {
@@ -25,8 +31,10 @@ export default function PulseView({ projectId }: { projectId: string }) {
     };
 
     useEffect(() => {
-        fetchPulse();
-    }, [projectId, refreshSignal]);
+        if (projectId && !propsPulse) {
+            fetchPulse();
+        }
+    }, [projectId, refreshSignal, propsPulse]);
 
     const formatTime = (timeStr: string) => {
         const date = new Date(timeStr);

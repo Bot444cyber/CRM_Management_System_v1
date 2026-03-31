@@ -14,7 +14,7 @@ const SyncContext = createContext<SyncContextType>({
 
 export const useSync = () => useContext(SyncContext);
 
-const POLLING_INTERVAL = 30000; // 30 seconds
+const POLLING_INTERVAL = 300000; // 5 minutes (Conservatory for shared hosting limits)
 
 export const SyncProvider = ({ children }: { children: React.ReactNode }) => {
     const [refreshSignal, setRefreshSignal] = useState(0);
