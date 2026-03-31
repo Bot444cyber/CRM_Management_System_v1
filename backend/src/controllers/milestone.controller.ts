@@ -18,6 +18,10 @@ export const getProjectMilestones = async (req: Request, res: Response): Promise
             progress: projectMilestones.progress,
             assignedTo: projectMilestones.assignedTo,
             priority: projectMilestones.priority,
+            tags: projectMilestones.tags,
+            estimatedHours: projectMilestones.estimatedHours,
+            actualHours: projectMilestones.actualHours,
+            checklists: projectMilestones.checklists,
             createdAt: projectMilestones.createdAt,
             assigneeName: users.name,
             assigneeEmail: users.email
@@ -35,7 +39,7 @@ export const getProjectMilestones = async (req: Request, res: Response): Promise
 export const createProjectMilestone = async (req: Request, res: Response): Promise<void> => {
     try {
         const { id } = req.params;
-        const { name, description, dueDate, assignedTo, priority } = req.body;
+        const { name, description, dueDate, assignedTo, priority, tags, estimatedHours } = req.body;
         const requesterId = req.user?.userId;
 
         if (!requesterId) {
@@ -61,7 +65,9 @@ export const createProjectMilestone = async (req: Request, res: Response): Promi
             description: description || null,
             dueDate: dueDate ? new Date(dueDate) : null,
             assignedTo: assignedTo || null,
-            priority: priority || "Medium"
+            priority: priority || "Medium",
+            tags: tags || [],
+            estimatedHours: estimatedHours || 0
         });
 
         res.status(201).json({ message: "Milestone created", id: milestoneId });
@@ -74,7 +80,7 @@ export const createProjectMilestone = async (req: Request, res: Response): Promi
 export const updateProjectMilestone = async (req: Request, res: Response): Promise<void> => {
     try {
         const { id, milestoneId } = req.params;
-        const { status, progress, assignedTo, priority, name, description, dueDate } = req.body;
+        const { status, progress, assignedTo, priority, name, description, dueDate, tags, estimatedHours, actualHours, checklists } = req.body;
 
         await db.update(projectMilestones).set({
             ...(status ? { status } : {}),
@@ -82,8 +88,12 @@ export const updateProjectMilestone = async (req: Request, res: Response): Promi
             ...(assignedTo !== undefined ? { assignedTo } : {}),
             ...(priority ? { priority } : {}),
             ...(name ? { name } : {}),
-            ...(description ? { description } : {}),
-            ...(dueDate ? { dueDate: new Date(dueDate) } : {})
+            ...(description !== undefined ? { description } : {}),
+            ...(dueDate ? { dueDate: new Date(dueDate) } : {}),
+            ...(tags ? { tags } : {}),
+            ...(estimatedHours !== undefined ? { estimatedHours } : {}),
+            ...(actualHours !== undefined ? { actualHours } : {}),
+            ...(checklists ? { checklists } : {})
         }).where(eq(projectMilestones.id, milestoneId as string));
 
         // Pulse Event on Status Update

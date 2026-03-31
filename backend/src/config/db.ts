@@ -7,7 +7,7 @@ dotenv.config();
 const poolConnection = mysql.createPool({
     uri: process.env.DATABASE_URL,
     waitForConnections: true,
-    connectionLimit: 5,
+    connectionLimit: 20,
     queueLimit: 0,
     enableKeepAlive: true,
     keepAliveInitialDelay: 10000,

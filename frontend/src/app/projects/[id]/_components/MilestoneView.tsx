@@ -85,6 +85,7 @@ export default function MilestoneView({ projectId, milestones = [], members = []
 
     const [isCreating, setIsCreating] = useState(false);
     const [name, setName] = useState('');
+    const [description, setDescription] = useState('');
     const [dueDate, setDueDate] = useState('');
     const [assignedTo, setAssignedTo] = useState<string>('');
     const [priority, setPriority] = useState<string>('Medium');
@@ -92,6 +93,7 @@ export default function MilestoneView({ projectId, milestones = [], members = []
     const [onlyMyTasks, setOnlyMyTasks] = useState(false);
     const [tagsInput, setTagsInput] = useState('');
     const [estimatedHours, setEstimatedHours] = useState('0');
+    const [actualHoursInput, setActualHoursInput] = useState('0');
     const [viewMode, setViewMode] = useState<'list' | 'board' | 'analytics'>(initialViewMode || (canManage ? 'list' : 'board'));
 
     React.useEffect(() => {
@@ -104,7 +106,7 @@ export default function MilestoneView({ projectId, milestones = [], members = []
         const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pms/${projectId}/milestones`, {
             method: 'POST',
             body: JSON.stringify({
-                name, dueDate,
+                name, description, dueDate,
                 assignedTo: assignedTo ? parseInt(assignedTo) : null,
                 priority,
                 tags,
@@ -113,7 +115,7 @@ export default function MilestoneView({ projectId, milestones = [], members = []
         });
         if (res.ok) {
             toast.success('Task assigned successfully');
-            setIsCreating(false); setName(''); setDueDate(''); setAssignedTo(''); setPriority('Medium');
+            setIsCreating(false); setName(''); setDescription(''); setDueDate(''); setAssignedTo(''); setPriority('Medium');
             setTagsInput(''); setEstimatedHours('0');
             triggerRefresh();
             refresh();
@@ -267,18 +269,28 @@ export default function MilestoneView({ projectId, milestones = [], members = []
                     >
                         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl pointer-events-none" />
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">What needs to be done?</label>
+                            <div className="space-y-2 md:col-span-2 lg:col-span-1">
+                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Objective / Short Title</label>
                                 <input
                                     type="text"
                                     value={name}
                                     onChange={e => setName(e.target.value)}
                                     className="w-full bg-background/50 border border-border rounded-xl px-4 py-3 text-xs font-bold text-foreground outline-none focus:border-primary transition-all shadow-inner"
-                                    placeholder="What needs to be done?"
+                                    placeholder="e.g. Design Login Page"
+                                />
+                            </div>
+                            <div className="space-y-2 md:col-span-2 lg:col-span-3">
+                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Detail Description</label>
+                                <textarea
+                                    value={description}
+                                    onChange={e => setDescription(e.target.value)}
+                                    rows={1}
+                                    className="w-full bg-background/50 border border-border rounded-xl px-4 py-3 text-xs font-bold text-foreground outline-none focus:border-primary transition-all shadow-inner resize-none min-h-[46px]"
+                                    placeholder="Add more context or instructions for this task..."
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Who is doing this?</label>
+                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Assign To</label>
                                 <select
                                     value={assignedTo}
                                     onChange={e => setAssignedTo(e.target.value)}
@@ -287,13 +299,13 @@ export default function MilestoneView({ projectId, milestones = [], members = []
                                     <option value="">Unassigned</option>
                                     {members.map((m: any) => (
                                         <option key={m.userId} value={m.userId}>
-                                            [{m.projectRole?.replace('_', ' ').toUpperCase() || 'MEMBER'}] {formatName(m.name, m.email || m.userName)} - {m.email || m.userName}
+                                            [{m.projectRole?.replace('_', ' ').toUpperCase() || 'MEMBER'}] {formatName(m.name, m.email || m.userName)}
                                         </option>
                                     ))}
                                 </select>
                             </div>
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">How important is this?</label>
+                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Priority Level</label>
                                 <select
                                     value={priority}
                                     onChange={e => setPriority(e.target.value)}
@@ -305,7 +317,7 @@ export default function MilestoneView({ projectId, milestones = [], members = []
                                 </select>
                             </div>
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Due Date</label>
+                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Target Date</label>
                                 <input
                                     type="date"
                                     value={dueDate}
@@ -313,8 +325,23 @@ export default function MilestoneView({ projectId, milestones = [], members = []
                                     className="w-full bg-background/50 border border-border rounded-xl px-4 py-3 text-xs font-bold text-foreground outline-none focus:border-primary transition-all"
                                 />
                             </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Time Estimation (H)</label>
+                                <div className="relative group">
+                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
+                                        <Clock size={14} />
+                                    </div>
+                                    <input
+                                        type="number"
+                                        value={estimatedHours}
+                                        onChange={e => setEstimatedHours(e.target.value)}
+                                        className="w-full bg-background/50 border border-border rounded-xl pl-10 pr-4 py-3 text-xs font-bold text-foreground outline-none focus:border-primary transition-all"
+                                        min="0"
+                                    />
+                                </div>
+                            </div>
 
-                            <div className="space-y-2 lg:col-span-3">
+                            <div className="space-y-2 md:col-span-2 lg:col-span-4">
                                 <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Category Tags (comma separated)</label>
                                 <div className="relative group">
                                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
@@ -326,21 +353,6 @@ export default function MilestoneView({ projectId, milestones = [], members = []
                                         onChange={e => setTagsInput(e.target.value)}
                                         className="w-full bg-background/50 border border-border rounded-xl pl-10 pr-4 py-3 text-xs font-bold text-foreground outline-none focus:border-primary transition-all"
                                         placeholder="frontend, bug, v1.0..."
-                                    />
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Expected Time (Hours)</label>
-                                <div className="relative group">
-                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
-                                        <Clock size={14} />
-                                    </div>
-                                    <input
-                                        type="number"
-                                        value={estimatedHours}
-                                        onChange={e => setEstimatedHours(e.target.value)}
-                                        className="w-full bg-background/50 border border-border rounded-xl pl-10 pr-4 py-3 text-xs font-bold text-foreground outline-none focus:border-primary transition-all"
-                                        min="0"
                                     />
                                 </div>
                             </div>
@@ -714,7 +726,7 @@ function TaskListItem({ task, idx, canManage, isMyTask, onUpdate }: { task: Mile
                     </div>
                 </div>
 
-                {task.tags && task.tags.length > 0 && (
+                {Array.isArray(task.tags) && task.tags.length > 0 && (
                     <div className="flex flex-wrap gap-2 mb-6">
                         {task.tags.map(tag => (
                             <span key={tag} className="px-2 py-0.5 rounded-md bg-secondary/50 text-[8px] font-bold text-muted-foreground uppercase tracking-wider border border-border/50">
@@ -724,17 +736,29 @@ function TaskListItem({ task, idx, canManage, isMyTask, onUpdate }: { task: Mile
                     </div>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-[1fr,250px] gap-8 items-end">
-                    <div className="space-y-4">
-                        <div>
-                            <h3 className="text-lg font-black text-foreground uppercase tracking-tight mb-2 group-hover:text-primary transition-colors">{task.name}</h3>
-                            <p className="text-xs text-muted-foreground font-medium opacity-80 leading-relaxed max-w-2xl">{task.description || "No detailed description provided for this task objective."}</p>
+                <div className="grid grid-cols-1 lg:grid-cols-[1fr,150px,200px] gap-8 items-start">
+                    <div className="space-y-3">
+                        <div className="flex flex-col gap-1">
+                            <h3 className="text-base font-black text-foreground uppercase tracking-tight group-hover:text-primary transition-colors leading-tight">{task.name}</h3>
+                            <p className="text-[11px] text-muted-foreground font-medium opacity-80 leading-relaxed max-w-3xl line-clamp-2 italic">
+                                {task.description || "No detailed objective provided for this mission."}
+                            </p>
                         </div>
+
+                        {Array.isArray(task.tags) && task.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5">
+                                {task.tags.map(tag => (
+                                    <span key={tag} className="px-2 py-0.5 rounded-md bg-primary/5 text-[8px] font-black text-primary/60 uppercase tracking-widest border border-primary/10">
+                                        #{tag}
+                                    </span>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
-                    <div className="space-y-3">
-                        <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-[0.2em] mb-1">
-                            <span className="text-muted-foreground">How far along are you?</span>
+                    <div className="space-y-3 bg-secondary/20 p-4 rounded-2xl border border-border/10">
+                        <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-[0.2em]">
+                            <span className="text-muted-foreground">Progress</span>
                             <span className={cn(isCompleted ? "text-emerald-500" : "text-primary")}>{task.progress}%</span>
                         </div>
                         <input
@@ -745,11 +769,8 @@ function TaskListItem({ task, idx, canManage, isMyTask, onUpdate }: { task: Mile
                             value={task.progress}
                             onChange={(e) => onUpdate({ progress: parseInt(e.target.value) })}
                             disabled={!canManage && !isMyTask}
-                            className="w-full h-1.5 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
+                            className="w-full h-1 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
                         />
-                        <div className="flex justify-between mt-1 opacity-40">
-                            {[0, 25, 50, 75, 100].map(v => <span key={v} className="text-[8px] font-black">{v}%</span>)}
-                        </div>
                     </div>
                 </div>
             </div>
@@ -777,14 +798,24 @@ function TaskCard({ task, onUpdate }: { task: Milestone; onUpdate: (updates: Par
                 </div>
             </div>
 
-            <h4 className="text-xs font-black text-foreground uppercase tracking-tight mb-3 group-hover:text-primary transition-colors line-clamp-3 leading-relaxed relative z-10">{task.name}</h4>
+            <h4 className="text-[11px] font-black text-foreground uppercase tracking-tight mb-2 group-hover:text-primary transition-colors line-clamp-2 leading-tight relative z-10">{task.name}</h4>
+            <p className="text-[9px] text-muted-foreground font-medium line-clamp-2 mb-4 italic opacity-60 leading-relaxed pr-4">{task.description || "Task mission details pending..."}</p>
 
-            {task.tags && task.tags.length > 0 && (
+            <div className="space-y-2 mb-4 relative z-10">
+                <div className="flex justify-between text-[8px] font-black uppercase tracking-widest opacity-40">
+                    <span>Performance</span>
+                    <span>{task.progress}%</span>
+                </div>
+                <div className="h-0.5 bg-secondary rounded-full overflow-hidden">
+                    <div className="h-full bg-primary" style={{ width: `${task.progress}%` }} />
+                </div>
+            </div>
+
+            {Array.isArray(task.tags) && task.tags.length > 0 && (
                 <div className="flex flex-wrap gap-1 mb-4 relative z-10">
-                    {task.tags.slice(0, 3).map(tag => (
-                        <span key={tag} className="text-[7px] font-bold text-muted-foreground/60 uppercase tracking-tighter">#{tag}</span>
+                    {task.tags.slice(0, 2).map(tag => (
+                        <span key={tag} className="px-1.5 py-0.5 rounded-sm bg-primary/5 text-[6px] font-black text-primary/40 uppercase tracking-tighter border border-primary/5">#{tag}</span>
                     ))}
-                    {task.tags.length > 3 && <span className="text-[7px] font-bold text-muted-foreground/60 tracking-tighter">+{task.tags.length - 3}</span>}
                 </div>
             )}
 

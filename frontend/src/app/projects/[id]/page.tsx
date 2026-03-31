@@ -110,8 +110,16 @@ export default function ProjectDashboardPage() {
     const activeTab = isManager ? requestedTab : 'milestones';
     const activeView = searchParams.get('view') || (isManager ? 'list' : 'board');
 
+    const fetchMilestones = async () => {
+        try {
+            const mRes = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pms/${projectId}/milestones`);
+            if (mRes.ok) setMilestones(await mRes.ok ? await mRes.json() : []);
+        } catch (e) { console.error('Milestone sync failed', e); }
+    };
+
     const fetchProjectData = async () => {
         try {
+            setLoading(true);
             const [pRes, mRes, rRes, remRes, pulseRes, meRes, memRes] = await Promise.all([
                 apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pms/${projectId}`),
                 apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pms/${projectId}/milestones`),
@@ -525,7 +533,7 @@ export default function ProjectDashboardPage() {
                     )}
 
                     <div className="pb-20 h-full">
-                        {activeTab === 'milestones' && <MilestoneView projectId={projectId} milestones={milestones} members={members} currentUser={currentUser} currentUserRole={currentUserRole} refresh={fetchProjectData} viewMode={activeView as any} />}
+                        {activeTab === 'milestones' && <MilestoneView projectId={projectId} milestones={milestones} members={members} currentUser={currentUser} currentUserRole={currentUserRole} refresh={fetchMilestones} viewMode={activeView as any} />}
                         {activeTab === 'resources' && <ResourceView projectId={projectId} requests={requests} currentUserRole={currentUserRole} refresh={fetchProjectData} />}
                         {activeTab === 'team' && <TeamView projectId={projectId} workspaceId={project.workspaceId} currentUserRole={currentUserRole} refresh={fetchProjectData} />}
                         {activeTab === 'pulse' && <PulseView projectId={projectId} />}

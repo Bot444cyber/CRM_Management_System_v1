@@ -4,6 +4,8 @@ import { db } from "../config/db";
 import { users } from "../db/schema";
 import { eq } from "drizzle-orm";
 
+// In-memory cache for throttling lastActive updates
+const lastActiveCache = new Map<number, number>();
 
 declare global {
     namespace Express {
@@ -31,13 +33,23 @@ export const authenticate = (req: Request, res: Response, next: NextFunction): v
 
     req.user = payload;
 
-    // Update lastActive timestamp in background
-    if (payload.userId) {
+    req.user = payload;
+
+    // Throttled: Only update lastActive every 5 minutes
+    const now = Date.now();
+    const lastUpdate = lastActiveCache.get(payload.userId);
+    const FIVE_MINUTES = 5 * 60 * 1000;
+
+    if (payload.userId && (!lastUpdate || now - lastUpdate > FIVE_MINUTES)) {
+        lastActiveCache.set(payload.userId, now);
         db.update(users)
             .set({ lastActive: new Date() })
             .where(eq(users.id, payload.userId))
             .execute()
-            .catch(err => console.error("Error updating lastActive:", err));
+            .catch(err => {
+                console.error("Error updating lastActive:", err);
+                lastActiveCache.delete(payload.userId); // Allow retry on failure
+            });
     }
 
     next();
