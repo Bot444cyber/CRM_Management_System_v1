@@ -103,11 +103,11 @@ export default function WorkspaceDetailsPage() {
                 setEditName(detailsData.name || '');
                 setEditDesc(detailsData.description || '');
             } else {
-                toast.error('Tactical link degraded');
+                toast.error('Connection lost');
             }
         } catch (error) {
             console.error('Error fetching data:', error);
-            toast.error('Failed to sync tactical node data');
+            toast.error('Couldn\'t load workspace info');
         } finally {
             setIsLoading(false);
         }
@@ -124,12 +124,12 @@ export default function WorkspaceDetailsPage() {
             });
             if (res.ok) {
                 setActiveWorkspace({ ...activeWorkspace, name: editName, description: editDesc });
-                toast.success('Node parameters updated');
+                toast.success('Workspace updated');
             } else {
-                toast.error('Update rejected by central command');
+                toast.error('Update failed');
             }
         } catch (error) {
-            toast.error('Uplink failed: Update rejected');
+            toast.error('Connection failed');
         } finally {
             setIsSaving(false);
         }
@@ -146,7 +146,7 @@ export default function WorkspaceDetailsPage() {
                 .filter(e => e.includes('@'));
 
             if (emails.length === 0) {
-                toast.error("No valid authorization targets detected");
+                toast.error("No valid emails found");
                 setIsInviting(false);
                 return;
             }
@@ -157,40 +157,40 @@ export default function WorkspaceDetailsPage() {
             });
 
             if (res.ok) {
-                toast.success(`Authorization signals sent to ${emails.length} operatives`);
+                toast.success(`Invitations sent to ${emails.length} people`);
                 setInviteEmails("");
                 setShowInviteForm(false);
             } else {
-                toast.error("Uplink timeout: Invitation sequence failed");
+                toast.error("Failed to send invitations");
             }
         } catch (error) {
-            toast.error("Network disruption: Invitation failed");
+            toast.error("Couldn't send invitations");
         } finally {
             setIsInviting(false);
         }
     };
 
     const handleRemoveMember = async (memberId: string) => {
-        if (!activeWorkspace || !confirm('Are you sure you want to decouple this operative from the node?')) return;
+        if (!activeWorkspace || !confirm('Are you sure you want to remove this person from the workspace?')) return;
         try {
             const res = await apiFetch(`${BACKEND_URL}/api/pms/workspaces/${activeWorkspace.id}/members/${memberId}`, {
                 method: 'DELETE'
             });
             if (res.ok) {
                 setMembers(members.filter(m => m.id !== memberId));
-                toast.success('Member access revoked');
+                toast.success('Member removed');
             } else {
-                toast.error('De-authorization failed');
+                toast.error('Failed to remove member');
             }
         } catch (error) {
-            toast.error('Protocol failure: Access removal denied');
+            toast.error('Couldn\'t remove member');
         }
     };
 
     const copyPassKey = () => {
         if (!activeWorkspace?.passKey) return;
         navigator.clipboard.writeText(activeWorkspace.passKey);
-        toast.success('Tactical PassKey copied to clipboard');
+        toast.success('Access Code copied to clipboard');
     };
 
     const isOwner = activeWorkspace?.role === 'owner';
@@ -199,7 +199,7 @@ export default function WorkspaceDetailsPage() {
         return (
             <div className="flex flex-col items-center justify-center h-[80vh] text-muted-foreground">
                 <Building2 size={48} className="mb-4 opacity-20" />
-                <p className="text-sm font-medium uppercase tracking-widest">No Active Node Detected</p>
+                <p className="text-sm font-medium uppercase tracking-widest">No Workspace Selected</p>
             </div>
         );
     }
@@ -218,7 +218,7 @@ export default function WorkspaceDetailsPage() {
                     <div className="w-6 h-6 rounded-lg bg-primary/20 border border-primary/30 flex items-center justify-center text-primary">
                         <Building2 size={12} />
                     </div>
-                    <span className="text-[10px] font-bold text-foreground uppercase tracking-widest">Node Admin</span>
+                    <span className="text-[10px] font-bold text-foreground uppercase tracking-widest">Workspace Admin</span>
                 </div>
                 <div className="flex items-center gap-3">
                     <ThemeToggle />
@@ -228,7 +228,7 @@ export default function WorkspaceDetailsPage() {
                 </div>
             </header>
 
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto custom-scrollbar">
                 <div className="max-w-6xl mx-auto p-4 md:p-6 lg:p-10 space-y-8 md:space-y-10">
                     {/* Header Section */}
                     <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-border/50">
@@ -245,7 +245,7 @@ export default function WorkspaceDetailsPage() {
                                         </div>
                                     </div>
                                     <p className="text-muted-foreground mt-2 max-w-xl line-clamp-2 text-sm">
-                                        {activeWorkspace.description || 'Standard tactical environment for cross-functional operations.'}
+                                        {activeWorkspace.description || 'Workspace for team collaboration and project management.'}
                                     </p>
                                 </div>
                             </div>
@@ -276,9 +276,9 @@ export default function WorkspaceDetailsPage() {
                     {/* Navigation Tabs */}
                     <div className="flex items-center gap-1 bg-card/50 border border-border/50 p-1 rounded-xl w-full md:w-fit overflow-x-auto no-scrollbar">
                         {[
-                            { id: 'overview', label: 'Node Overview', icon: <Settings size={14} /> },
-                            { id: 'members', label: 'Operatives', icon: <Users size={14} /> },
-                            { id: 'projects', label: 'Active Missions', icon: <Briefcase size={14} /> },
+                            { id: 'overview', label: 'Workspace Details', icon: <Settings size={14} /> },
+                            { id: 'members', label: 'Team Members', icon: <Users size={14} /> },
+                            { id: 'projects', label: 'Current Projects', icon: <Briefcase size={14} /> },
                         ].map(tab => (
                             <button
                                 key={tab.id}
@@ -316,7 +316,7 @@ export default function WorkspaceDetailsPage() {
                                         <section className="bg-card/30 border border-border/50 rounded-2xl p-6 lg:p-8 space-y-6">
                                             <h3 className="text-xs font-bold text-foreground uppercase tracking-widest flex items-center gap-2">
                                                 <Globe size={16} className="text-primary" />
-                                                Node Configuration
+                                                Workspace Settings
                                             </h3>
 
                                             <form onSubmit={handleUpdateWorkspace} className="space-y-6">
@@ -338,7 +338,7 @@ export default function WorkspaceDetailsPage() {
                                                         value={editDesc}
                                                         onChange={e => setEditDesc(e.target.value)}
                                                         className="w-full bg-background border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:border-primary/50 transition-all resize-none disabled:opacity-50 text-sm leading-relaxed"
-                                                        placeholder="Define the scope of this tactical node..."
+                                                        placeholder="Describe what this workspace is for..."
                                                     />
                                                 </div>
                                                 {isOwner && (
@@ -349,7 +349,7 @@ export default function WorkspaceDetailsPage() {
                                                         {isSaving ? (
                                                             <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
                                                         ) : <Save size={16} />}
-                                                        <span>Synchronize Parameter</span>
+                                                        <span>Save Changes</span>
                                                     </button>
                                                 )}
                                             </form>
@@ -359,13 +359,13 @@ export default function WorkspaceDetailsPage() {
                                             <section className="bg-destructive/5 border border-destructive/10 rounded-2xl p-6 lg:p-8 space-y-4">
                                                 <h3 className="text-xs font-bold text-destructive uppercase tracking-widest flex items-center gap-2">
                                                     <Trash2 size={16} />
-                                                    Terminal Deletion Zone
+                                                    Delete Workspace
                                                 </h3>
                                                 <p className="text-xs text-destructive/70 leading-relaxed max-w-xl">
-                                                    Warning: Deleting this node will permanently purge all associated projects, communication logs, and operative links from the central database. This action is terminal and IRREVERSIBLE.
+                                                    Warning: Deleting this workspace will permanently remove all associated projects, chat history, and team members from the database. This action cannot be undone.
                                                 </p>
                                                 <button className="bg-destructive/10 hover:bg-destructive text-destructive hover:text-destructive-foreground border border-destructive/20 font-bold py-2.5 px-6 rounded-xl transition-all text-[10px] uppercase tracking-widest mt-2 shadow-sm">
-                                                    Execute Node Purge
+                                                    Delete Workspace Permanently
                                                 </button>
                                             </section>
                                         )}
@@ -373,18 +373,18 @@ export default function WorkspaceDetailsPage() {
 
                                     <div className="space-y-6">
                                         <div className="bg-card/40 border border-border/50 rounded-2xl p-6 space-y-6 shadow-sm">
-                                            <h3 className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Intelligence Summary</h3>
+                                            <h3 className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Workspace Summary</h3>
                                             <div className="space-y-4">
                                                 <div className="flex items-center justify-between text-xs">
-                                                    <span className="text-muted-foreground font-medium">Established</span>
+                                                    <span className="text-muted-foreground font-medium">Created On</span>
                                                     <span className="text-foreground font-bold tracking-tight">{new Date(activeWorkspace.createdAt).toLocaleDateString()}</span>
                                                 </div>
                                                 <div className="flex items-center justify-between text-xs">
-                                                    <span className="text-muted-foreground font-medium">Total Operatives</span>
+                                                    <span className="text-muted-foreground font-medium">Total Members</span>
                                                     <span className="text-foreground font-bold tracking-tight">{members.length}</span>
                                                 </div>
                                                 <div className="flex items-center justify-between text-xs">
-                                                    <span className="text-muted-foreground font-medium">Active Missions</span>
+                                                    <span className="text-muted-foreground font-medium">Active Projects</span>
                                                     <span className="text-foreground font-bold tracking-tight">{projects.length}</span>
                                                 </div>
                                                 <div className="h-px bg-border/50" />
@@ -404,14 +404,14 @@ export default function WorkspaceDetailsPage() {
                             {activeTab === 'members' && (
                                 <div className="bg-card/30 border border-border/50 rounded-2xl overflow-hidden shadow-sm">
                                     <div className="p-6 border-b border-border flex items-center justify-between bg-accent/20">
-                                        <h3 className="text-sm font-bold text-foreground uppercase tracking-widest">Operative Roster</h3>
+                                        <h3 className="text-sm font-bold text-foreground uppercase tracking-widest">Team List</h3>
                                         {isOwner && (
                                             <button
                                                 onClick={() => setShowInviteForm(!showInviteForm)}
                                                 className="flex items-center gap-2 bg-background border border-border hover:bg-accent text-foreground px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-sm"
                                             >
                                                 <UserPlus size={16} className="text-primary" />
-                                                <span>{showInviteForm ? 'Close Interface' : 'Invite Operative'}</span>
+                                                <span>{showInviteForm ? 'Close' : 'Invite Member'}</span>
                                             </button>
                                         )}
                                     </div>
@@ -426,9 +426,9 @@ export default function WorkspaceDetailsPage() {
                                             >
                                                 <div className="p-6 bg-accent/5 space-y-4">
                                                     <div className="space-y-2">
-                                                        <label className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest px-1">Bulk Invite Operatives (Comma or one per line)</label>
+                                                        <label className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest px-1">Batch Invite (Comma or one per line)</label>
                                                         <textarea
-                                                            placeholder="agent.one@monkframer.online, agent.two@monkframer.online..."
+                                                            placeholder="example@email.com, another@email.com..."
                                                             value={inviteEmails}
                                                             onChange={e => setInviteEmails(e.target.value)}
                                                             rows={3}
@@ -444,21 +444,21 @@ export default function WorkspaceDetailsPage() {
                                                             {isInviting ? (
                                                                 <div className="w-3 h-3 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
                                                             ) : <UserPlus size={14} />}
-                                                            <span>Authorize Personnel</span>
+                                                            <span>Send Invitations</span>
                                                         </button>
                                                     </div>
                                                 </div>
                                             </motion.div>
                                         )}
                                     </AnimatePresence>
-                                    <div className="overflow-x-auto">
+                                    <div className="overflow-x-auto custom-scrollbar">
                                         <table className="w-full text-left">
                                             <thead className="bg-accent/50 text-[10px] text-muted-foreground uppercase tracking-widest font-bold border-b border-border">
                                                 <tr>
-                                                    <th className="px-6 py-4">Operative</th>
-                                                    <th className="px-6 py-4">Tactical Role</th>
-                                                    <th className="px-6 py-4">Security Level</th>
-                                                    <th className="px-6 py-4">Linked At</th>
+                                                    <th className="px-6 py-4">Member</th>
+                                                    <th className="px-6 py-4">Role</th>
+                                                    <th className="px-6 py-4">Permissions</th>
+                                                    <th className="px-6 py-4">Joined On</th>
                                                     <th className="px-6 py-4 text-right">Actions</th>
                                                 </tr>
                                             </thead>
@@ -505,7 +505,7 @@ export default function WorkspaceDetailsPage() {
                                                                 <button
                                                                     onClick={() => handleRemoveMember(member.id)}
                                                                     className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-all"
-                                                                    title="Revoke Access"
+                                                                    title="Remove Member"
                                                                 >
                                                                     <Trash2 size={16} />
                                                                 </button>
@@ -563,7 +563,7 @@ export default function WorkspaceDetailsPage() {
                                                     className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground hover:text-foreground transition-colors uppercase tracking-widest"
                                                 >
                                                     <ExternalLink size={12} />
-                                                    Mission Intelligence
+                                                    View Project
                                                 </a>
                                             </div>
                                         </div>
@@ -576,7 +576,7 @@ export default function WorkspaceDetailsPage() {
                                             <div className="w-12 h-12 rounded-full bg-card border border-border flex items-center justify-center shadow-lg">
                                                 <Plus size={24} />
                                             </div>
-                                            <span className="text-[10px] font-bold uppercase tracking-widest">Node Expansion: New Mission</span>
+                                            <span className="text-[10px] font-bold uppercase tracking-widest">New Project</span>
                                         </a>
                                     )}
                                 </div>

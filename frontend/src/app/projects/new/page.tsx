@@ -74,11 +74,11 @@ export default function NewProjectPage() {
                 body: JSON.stringify({ name: newWsName })
             });
             if (res.ok) {
-                toast.success('Organization Launched');
+                toast.success('Workspace Created');
                 await checkWorkspace();
             }
         } catch (e) {
-            toast.error('Launch sequence failed');
+            toast.error('Creation failed');
         } finally {
             setCreatingWs(false);
         }
@@ -99,7 +99,7 @@ export default function NewProjectPage() {
 
             if (res.ok) {
                 const data = await res.json();
-                toast.success('Initiative Secured');
+                toast.success('Project Created');
                 triggerRefresh();
                 router.push(`/projects/${data.id}`);
             } else {
@@ -129,7 +129,7 @@ export default function NewProjectPage() {
                             <Plus size={16} className="text-primary" />
                         </div>
                         <h1 className="text-sm font-black tracking-tight text-foreground uppercase leading-none">
-                            Initialize Initiative
+                            Create Project
                         </h1>
                     </div>
                 </div>
@@ -138,14 +138,14 @@ export default function NewProjectPage() {
                         className="h-9 px-6 bg-secondary text-muted-foreground text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-destructive hover:text-white border border-border transition-all shadow-xs"
                         onClick={() => router.push('/projects')}
                     >
-                        Abort
+                        Cancel
                     </button>
                     <ThemeToggle />
                 </div>
             </header>
 
             <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col items-center p-6 md:p-12 relative">
-                <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:40px_40px] pointer-events-none" />
+                <div className="absolute inset-0 bg-grid-white/[0.02] bg-size-[40px_40px] pointer-events-none" />
 
                 <div className="max-w-4xl w-full z-10">
                     <motion.div
@@ -157,7 +157,7 @@ export default function NewProjectPage() {
                             <div className="p-2 bg-primary/10 rounded-lg text-primary">
                                 <Terminal size={18} />
                             </div>
-                            <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-40">Project Initialization Protocol</h2>
+                            <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-40">Project Creation</h2>
                         </div>
 
                         {wsError === "MISSING_CONTEXT" ? (
@@ -167,13 +167,13 @@ export default function NewProjectPage() {
                                         <AlertCircle size={40} />
                                     </div>
                                     <div>
-                                        <h3 className="text-xl font-black uppercase tracking-tight text-foreground">No Active Sector</h3>
-                                        <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest opacity-60">You must be part of an organization to initialize projects.</p>
+                                        <h3 className="text-xl font-black uppercase tracking-tight text-foreground">No Active Workspace</h3>
+                                        <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest opacity-60">You need a workspace to create projects.</p>
                                     </div>
                                 </div>
                                 <form onSubmit={handleCreateWorkspace} className="max-w-xs mx-auto space-y-6">
                                     <div className="space-y-2 text-left">
-                                        <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-40 ml-4">Sector Designation</label>
+                                        <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-40 ml-4">Workspace Name</label>
                                         <input
                                             type="text"
                                             placeholder="ORGANIZATION NAME..."
@@ -188,7 +188,7 @@ export default function NewProjectPage() {
                                         className="w-full bg-primary text-primary-foreground py-4 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] hover:scale-105 transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3"
                                     >
                                         {creatingWs ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />}
-                                        {creatingWs ? 'LAUNCHING...' : 'LAUNCH SECTOR'}
+                                        {creatingWs ? 'CREATING...' : 'CREATE WORKSPACE'}
                                     </button>
                                 </form>
                             </div>
@@ -197,22 +197,22 @@ export default function NewProjectPage() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                                     <div className="space-y-10">
                                         <div className="space-y-3">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 ml-4">Initiative Name</label>
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 ml-4">Project Name</label>
                                             <input
                                                 type="text"
                                                 required
                                                 placeholder="E.G. PROJECT OMEGA"
                                                 value={formData.name}
                                                 onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                                className="w-full bg-secondary/50 border border-border/50 rounded-2xl px-6 py-5 text-sm font-black uppercase tracking-[0.1em] outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/50 transition-all shadow-inner"
+                                                className="w-full bg-secondary/50 border border-border/50 rounded-2xl px-6 py-5 text-sm font-black uppercase tracking-widest outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/50 transition-all shadow-inner"
                                             />
                                         </div>
 
                                         <div className="space-y-3">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 ml-4">Strategy Brief</label>
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 ml-4">Description</label>
                                             <textarea
                                                 rows={5}
-                                                placeholder="DEFINE CORE OBJECTIVES..."
+                                                placeholder="Describe the project..."
                                                 value={formData.description}
                                                 onChange={e => setFormData({ ...formData, description: e.target.value })}
                                                 className="w-full bg-secondary/50 border border-border/50 rounded-2xl px-6 py-5 text-sm font-bold uppercase outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/50 transition-all shadow-inner resize-none h-48 leading-relaxed"
@@ -222,7 +222,7 @@ export default function NewProjectPage() {
 
                                     <div className="space-y-10">
                                         <div className="space-y-3">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 ml-4">Operational Status</label>
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 ml-4">Status</label>
                                             <div className="relative">
                                                 <select
                                                     defaultValue={"Active"}
@@ -239,7 +239,7 @@ export default function NewProjectPage() {
                                         </div>
 
                                         <div className="space-y-3">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 ml-4">Priority Matrix</label>
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 ml-4">Priority</label>
                                             <div className="grid grid-cols-3 gap-3">
                                                 {['Low', 'Med', 'High'].map(h => (
                                                     <button
@@ -257,7 +257,7 @@ export default function NewProjectPage() {
                                         </div>
 
                                         <div className="space-y-3">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 ml-4">Final Deadline</label>
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 ml-4">Deadline</label>
                                             <div className="relative">
                                                 <input
                                                     type="date"
@@ -291,7 +291,7 @@ export default function NewProjectPage() {
                                             <ShieldCheck size={18} />
                                         </div>
                                         <div className="flex flex-col">
-                                            <span className="text-[8px] font-black uppercase tracking-[0.3em]">Secure Init Layer</span>
+                                            <span className="text-[8px] font-black uppercase tracking-[0.3em]">Project System</span>
                                             <span className="text-[7px] font-bold opacity-60 uppercase">AntiGravity Command Protocol v4.0</span>
                                         </div>
                                     </div>
@@ -301,17 +301,7 @@ export default function NewProjectPage() {
                                         disabled={loading}
                                         className="w-full md:w-auto bg-primary text-primary-foreground h-16 px-12 rounded-2xl font-black uppercase tracking-[0.2em] text-xs hover:scale-[1.02] active:scale-95 transition-all shadow-2xl shadow-primary/20 flex items-center justify-center gap-4 group/btn disabled:opacity-50"
                                     >
-                                        {loading ? (
-                                            <>
-                                                <Loader2 size={20} className="animate-spin" />
-                                                DEPLOYING...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Zap size={20} className="group-hover:rotate-12 transition-transform" />
-                                                DEPLOY INITIATIVE
-                                            </>
-                                        )}
+                                        {loading ? "CREATING..." : "CREATE PROJECT"}
                                     </button>
                                 </div>
                             </form>

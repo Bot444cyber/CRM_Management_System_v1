@@ -106,7 +106,7 @@ const SubProductShowcaseView: React.FC<SubProductShowcaseViewProps> = ({
                     </div>
 
                     {/* Thumbnail Options (Horizontal) */}
-                    <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+                    <div className="flex gap-4 overflow-x-auto pb-2 custom-scrollbar">
                         {images.map((img) => (
                             <button
                                 key={img.id}
@@ -172,7 +172,7 @@ const SubProductShowcaseView: React.FC<SubProductShowcaseViewProps> = ({
                                 You May Also Like
                             </h3>
 
-                            <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+                            <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar">
                                 {suggestedProducts.map(({ p, index }) => (
                                     <button
                                         key={index}

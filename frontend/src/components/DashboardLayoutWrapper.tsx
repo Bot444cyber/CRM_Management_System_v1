@@ -43,13 +43,13 @@ export default function DashboardLayoutWrapper({ children }: { children: React.R
                 className={`fixed md:relative top-0 bottom-0 left-0 z-50 transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
                     } transition-transform duration-300 ease-in-out md:flex md:h-screen`}
             >
-                <div className="h-full bg-background md:bg-transparent overflow-y-auto md:overflow-hidden pt-[60px] md:pt-0 border-r border-border shadow-2xl md:shadow-none">
+                <div className="h-full bg-background md:bg-transparent overflow-y-auto md:overflow-hidden pt-[60px] md:pt-0 border-r border-border shadow-2xl md:shadow-none custom-scrollbar">
                     <Sidebar onClose={closeMobileMenu} />
                 </div>
             </div>
 
             {/* Main Content */}
-            <main className="flex-1 overflow-y-auto bg-background text-foreground overflow-x-hidden">
+            <main className="flex-1 overflow-y-auto bg-background text-foreground overflow-x-hidden custom-scrollbar">
                 <ClickSpark sparkColor="currentColor" sparkSize={10} sparkRadius={22} sparkCount={10} duration={500} easing="ease-out" extraScale={1.2}>
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-10 py-6 md:py-10">
                         {children}

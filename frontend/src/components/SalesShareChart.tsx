@@ -100,7 +100,7 @@ export default function SalesShareChart({ products }: SalesShareChartProps) {
             </div>
 
             {/* Legend table */}
-            <div className="flex-1 w-full overflow-auto">
+            <div className="flex-1 w-full overflow-auto custom-scrollbar">
                 <table className="w-full text-xs">
                     <thead>
                         <tr className="border-b border-border">

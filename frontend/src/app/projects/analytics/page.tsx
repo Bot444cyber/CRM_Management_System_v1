@@ -43,9 +43,97 @@ interface PMSSummary {
     activity: Array<{ id: string; type: string; title: string; message: string; time: string; workspaceId: string }>;
 }
 
+// ── Access Control Components ──────────────────────────────────────────────
+
+function PermissionDenied({ workspaces, onSelect }: { workspaces: any[], onSelect: (ws: any) => void }) {
+    const adminWorkspaces = workspaces.filter(w => w.role === 'owner' || w.role === 'admin');
+
+    return (
+        <div className="h-full w-full flex flex-col items-center justify-center p-6 bg-background custom-scrollbar overflow-y-auto">
+            <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="max-w-md w-full text-center space-y-8"
+            >
+                <div className="relative inline-block">
+                    <div className="absolute inset-0 bg-destructive/20 blur-3xl rounded-full animate-pulse" />
+                    <div className="relative w-24 h-24 rounded-3xl bg-secondary border border-border flex items-center justify-center mx-auto shadow-2xl">
+                        <Shield size={40} className="text-destructive animate-bounce" />
+                    </div>
+                </div>
+
+                <div className="space-y-3">
+                    <h2 className="text-2xl font-black text-foreground uppercase tracking-tighter">Access Denied</h2>
+                    <p className="text-sm text-muted-foreground font-medium leading-relaxed">
+                        You don't have permission to view this workspace's analytics. This information is only available to <span className="text-foreground font-bold">Owners</span> and <span className="text-foreground font-bold">Admins</span>.
+                    </p>
+                    <p className="text-[11px] text-muted-foreground/60 font-bold uppercase tracking-wide">
+                        You can only view analytics for your authorized workspaces. Please switch to one of your workspaces below.
+                    </p>
+                </div>
+
+                {adminWorkspaces.length > 0 ? (
+                    <div className="space-y-4 pt-4">
+                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Switch to your workspaces</p>
+                        <div className="grid gap-2">
+                            {adminWorkspaces.map(ws => (
+                                <button
+                                    key={ws.id}
+                                    onClick={() => onSelect(ws)}
+                                    className="flex items-center justify-between p-4 bg-secondary/50 border border-border rounded-2xl hover:border-primary/50 hover:bg-secondary transition-all group"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <Building2 size={18} className="text-muted-foreground group-hover:text-primary transition-colors" />
+                                        <span className="text-sm font-bold text-foreground">{ws.name}</span>
+                                    </div>
+                                    <span className="text-[9px] font-black text-primary uppercase tracking-widest bg-primary/10 px-2 py-0.5 rounded-full">{ws.role}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                ) : (
+                    <div className="p-10 bg-secondary/30 border border-border rounded-[2rem]">
+                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-relaxed opacity-60">
+                            No authorized workspaces found in your profile with required clearance.
+                        </p>
+                    </div>
+                )}
+            </motion.div>
+        </div>
+    );
+}
+
+function NoWorkspaceFound() {
+    return (
+        <div className="h-full w-full flex flex-col items-center justify-center p-6 bg-background">
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="max-w-md w-full text-center space-y-8"
+            >
+                <div className="w-20 h-20 rounded-3xl bg-secondary border border-border flex items-center justify-center mx-auto shadow-xl">
+                    <Building2 size={32} className="text-muted-foreground opacity-20" />
+                </div>
+                <div className="space-y-2">
+                    <h2 className="text-xl font-black text-foreground uppercase tracking-tight">No Workspace Found</h2>
+                    <p className="text-sm text-muted-foreground font-medium uppercase tracking-wide opacity-60">
+                        You haven't joined any workspaces yet.
+                    </p>
+                </div>
+                <a
+                    href="/projects"
+                    className="inline-flex items-center gap-2 px-8 py-4 bg-foreground text-background rounded-2xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-xl"
+                >
+                    Create Your First Workspace
+                </a>
+            </motion.div>
+        </div>
+    );
+}
+
 export default function AnalyticsPage() {
     const { setIsMobileOpen } = useSidebar();
-    const { activeWorkspace } = useWorkspace();
+    const { activeWorkspace, workspaces, setActiveWorkspace, loading: wsLoading } = useWorkspace();
     const { refreshSignal } = useSync();
     const [summary, setSummary] = useState<PMSSummary | null>(null);
     const [loading, setLoading] = useState(true);
@@ -102,7 +190,17 @@ export default function AnalyticsPage() {
         };
     }, [summary, activeWorkspace]);
 
-    if (loading) return (
+    const canViewAnalytics = useMemo(() => {
+        // If it's a specific workspace, check if user is owner or admin
+        if (activeWorkspace) {
+            return activeWorkspace.role === 'owner' || activeWorkspace.role === 'admin';
+        }
+        // If it's the "Global Grid" (activeWorkspace is null), we only allow if they are owner/admin of AT LEAST one workspace
+        // This is a sensible default for "Global Grid"
+        return workspaces.some(w => w.role === 'owner' || w.role === 'admin');
+    }, [activeWorkspace, workspaces]);
+
+    if (loading || wsLoading) return (
         <div className="h-full w-full flex flex-col items-center justify-center bg-background min-h-[400px] transition-colors duration-500">
             <div className="relative mb-8">
                 <div className="w-16 h-16 border-4 border-primary/10 border-t-primary rounded-full animate-spin" />
@@ -112,14 +210,24 @@ export default function AnalyticsPage() {
             </div>
             <div className="space-y-2 text-center">
                 <h3 className="text-xs font-black text-foreground uppercase tracking-[0.4em] animate-pulse">
-                    Aggregating Intelligence
+                    Loading Analytics
                 </h3>
                 <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest opacity-40">
-                    Scanning Neural Nodes...
+                    Getting workspace data...
                 </p>
             </div>
         </div>
     );
+
+    // 1. If user has no workspaces at all
+    if (workspaces.length === 0) {
+        return <NoWorkspaceFound />;
+    }
+
+    // 2. If user doesn't have permissions for the active workspace (or Global Grid)
+    if (!canViewAnalytics) {
+        return <PermissionDenied workspaces={workspaces} onSelect={setActiveWorkspace} />;
+    }
 
     return (
         <div className="bg-background h-full overflow-hidden flex flex-col">
@@ -134,14 +242,14 @@ export default function AnalyticsPage() {
                         <div className="flex items-center gap-2 text-sm font-black uppercase tracking-tight">
                             <span className="text-muted-foreground opacity-60">Analytics</span>
                             <ChevronRight size={14} className="text-border" />
-                            <span className="text-foreground">{activeWorkspace?.name || 'Global Grid'}</span>
+                            <span className="text-foreground">{activeWorkspace?.name || 'All Workspaces'}</span>
                         </div>
                     </div>
                 </div>
                 <div className="flex items-center gap-6">
                     <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-secondary/50 border border-border rounded-full shadow-inner">
                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse" />
-                        <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-80">Real-time Stream</span>
+                        <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-80">Live Updates</span>
                     </div>
                     <ThemeToggle />
                 </div>
@@ -152,28 +260,28 @@ export default function AnalyticsPage() {
                     {/* KPI Bento Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         <KPICard
-                            label="Active Workspaces"
+                            label="Total Workspaces"
                             value={summary?.workspaces.total.toString() || "0"}
                             trend="+2"
                             isUp={true}
                             icon={<Building2 size={20} />}
                         />
                         <KPICard
-                            label="Target Initiatives"
+                            label="Total Projects"
                             value={filteredStats?.projects.total.toString() || "0"}
                             trend="+12%"
                             isUp={true}
                             icon={<Target size={20} />}
                         />
                         <KPICard
-                            label="Team Headcount"
+                            label="Team Members"
                             value={filteredStats?.team.total.toString() || "0"}
                             trend="-3"
                             isUp={false}
                             icon={<Users size={20} />}
                         />
                         <KPICard
-                            label="Resource Velocity"
+                            label="Work Efficiency"
                             value="98.2%"
                             trend="+0.4%"
                             isUp={true}
@@ -186,8 +294,8 @@ export default function AnalyticsPage() {
                         <div className="lg:col-span-2 bg-card border border-border/50 rounded-2xl p-6 md:p-8 shadow-sm overflow-hidden group hover:shadow-md transition-all">
                             <div className="flex items-center justify-between mb-8">
                                 <div className="space-y-1">
-                                    <h3 className="text-[11px] font-black text-muted-foreground uppercase tracking-widest">Initiative Status Distribution</h3>
-                                    <p className="text-[10px] text-muted-foreground font-bold opacity-40 uppercase tracking-tight">Cross-workspace project phase metrics</p>
+                                    <h3 className="text-[11px] font-black text-muted-foreground uppercase tracking-widest">Project Progress</h3>
+                                    <p className="text-[10px] text-muted-foreground font-bold opacity-40 uppercase tracking-tight">Status of projects across all workspaces</p>
                                 </div>
                                 <div className="p-2 bg-secondary/50 rounded-lg text-muted-foreground">
                                     <TrendingUp size={16} />
@@ -238,8 +346,8 @@ export default function AnalyticsPage() {
                         <div className="bg-card border border-border/50 rounded-2xl p-6 md:p-8 shadow-sm flex flex-col group hover:shadow-md transition-all">
                             <div className="flex items-center justify-between mb-8">
                                 <div className="space-y-1">
-                                    <h3 className="text-[11px] font-black text-muted-foreground uppercase tracking-widest">Role Distribution</h3>
-                                    <p className="text-[10px] text-muted-foreground font-bold opacity-40 uppercase tracking-tight">Personnel allotment matrix</p>
+                                    <h3 className="text-[11px] font-black text-muted-foreground uppercase tracking-widest">Team Roles</h3>
+                                    <p className="text-[10px] text-muted-foreground font-bold opacity-40 uppercase tracking-tight">Number of members in each role</p>
                                 </div>
                                 <div className="p-2 bg-secondary/50 rounded-lg text-muted-foreground">
                                     <Shield size={16} />
@@ -275,7 +383,7 @@ export default function AnalyticsPage() {
                                 </ResponsiveContainer>
                                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                                     <span className="text-2xl font-black text-foreground tracking-tighter leading-none">{filteredStats?.team.total}</span>
-                                    <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40">Entities</span>
+                                    <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40">Members</span>
                                 </div>
                             </div>
                             <div className="mt-8 space-y-3">
@@ -296,8 +404,8 @@ export default function AnalyticsPage() {
                     <div className="bg-card/40 border border-border/50 rounded-[2rem] p-8 md:p-10 shadow-sm backdrop-blur-sm">
                         <div className="flex items-center justify-between mb-10">
                             <div className="space-y-1">
-                                <h3 className="text-sm font-black text-foreground uppercase tracking-[0.2em] leading-none">Global Sector Stream</h3>
-                                <p className="text-[10px] text-muted-foreground font-bold opacity-40 uppercase tracking-widest pl-0.5">Real-time event monitor across active nodes</p>
+                                <h3 className="text-sm font-black text-foreground uppercase tracking-[0.2em] leading-none">Recent Activity</h3>
+                                <p className="text-[10px] text-muted-foreground font-bold opacity-40 uppercase tracking-widest pl-0.5">Latest updates from your workspaces</p>
                             </div>
                             <div className="p-2.5 bg-secondary/50 rounded-xl text-muted-foreground shadow-inner">
                                 <Clock size={16} />
@@ -328,7 +436,7 @@ export default function AnalyticsPage() {
                                                 <h5 className="text-xs font-black text-foreground uppercase tracking-tight leading-none group-hover:text-primary transition-colors">{event.title}</h5>
                                                 <span className="text-[9px] text-muted-foreground font-black uppercase tracking-widest opacity-40 flex items-center gap-1.5 bg-secondary/30 px-2 py-0.5 rounded-full border border-border/50">
                                                     <div className="w-1 h-1 rounded-full bg-primary/40 animate-pulse" />
-                                                    Live Node
+                                                    Recent Update
                                                 </span>
                                             </div>
                                             <p className="text-[11px] text-muted-foreground leading-relaxed font-bold uppercase tracking-tight opacity-70 group-hover:opacity-100 transition-opacity max-w-2xl">{event.message}</p>
@@ -337,7 +445,7 @@ export default function AnalyticsPage() {
                                 )) : (
                                     <div className="py-24 flex flex-col items-center opacity-20">
                                         <Activity size={48} className="text-muted-foreground mb-6" />
-                                        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground">Sector Silence Detected</p>
+                                        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground">No activity found</p>
                                     </div>
                                 )}
                             </AnimatePresence>

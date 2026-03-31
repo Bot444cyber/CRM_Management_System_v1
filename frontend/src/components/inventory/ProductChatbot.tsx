@@ -132,7 +132,7 @@ const ProductChatbot: React.FC = () => {
                     </div>
 
                     {/* Messages Area */}
-                    <div className="flex-1 p-4 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent flex flex-col gap-4">
+                    <div className="flex-1 p-4 overflow-y-auto custom-scrollbar flex flex-col gap-4">
                         {messages.map((msg) => (
                             <div key={msg.id} className={cn("flex flex-col max-w-[85%]", msg.role === 'user' ? "self-end items-end" : "self-start items-start")}>
                                 <div className={cn(

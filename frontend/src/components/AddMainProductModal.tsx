@@ -90,7 +90,7 @@ export default function AddMainProductModal({ isOpen, onClose, onSave }: AddMain
                     </div>
 
                     {/* Scrollable Form Body */}
-                    <div className="flex-1 overflow-y-auto p-6 bg-card">
+                    <div className="flex-1 overflow-y-auto p-6 bg-card custom-scrollbar">
                         <form id="add-product-form" onSubmit={handleSubmit} className="space-y-6">
                             {error && (
                                 <div className="bg-destructive/10 border border-destructive/20 text-destructive text-xs font-bold uppercase tracking-wider p-3 rounded-lg text-center">

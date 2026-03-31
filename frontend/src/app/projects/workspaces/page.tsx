@@ -38,16 +38,16 @@ export default function AllWorkspacesPage() {
                             <Globe size={16} className="text-primary" />
                         </div>
                         <div className="flex items-center gap-2 text-sm font-black uppercase tracking-tight">
-                            <span className="text-muted-foreground opacity-60">Network</span>
+                            <span className="text-muted-foreground opacity-60">Overview</span>
                             <ChevronRight size={14} className="text-border" />
-                            <span className="text-foreground">Global Grid</span>
+                            <span className="text-foreground">Workspaces</span>
                         </div>
                     </div>
                 </div>
                 <div className="flex items-center gap-6">
                     <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-secondary/50 border border-border rounded-full shadow-inner">
                         <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(var(--primary),0.5)] animate-pulse" />
-                        <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-80">Sync Active</span>
+                        <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-80">Connected</span>
                     </div>
                     <ThemeToggle />
                 </div>
@@ -59,15 +59,15 @@ export default function AllWorkspacesPage() {
                     {/* Stats Summary */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="bg-card/40 border border-border/50 rounded-2xl p-6 backdrop-blur-md shadow-sm">
-                            <div className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2 opacity-50">Total Nodes</div>
+                            <div className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2 opacity-50">Workspaces</div>
                             <div className="text-3xl font-black text-foreground tracking-tighter">{workspaces.length}</div>
                         </div>
                         <div className="bg-card/40 border border-border/50 rounded-2xl p-6 backdrop-blur-md shadow-sm">
-                            <div className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2 opacity-50">Active Uplink</div>
-                            <div className="text-3xl font-black text-primary tracking-tighter">{activeWorkspace?.name || 'Null'}</div>
+                            <div className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2 opacity-50">Selected Workspace</div>
+                            <div className="text-3xl font-black text-primary tracking-tighter">{activeWorkspace?.name || 'None'}</div>
                         </div>
                         <div className="bg-card/40 border border-border/50 rounded-2xl p-6 backdrop-blur-md shadow-sm">
-                            <div className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2 opacity-50">Network Status</div>
+                            <div className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2 opacity-50">System Status</div>
                             <div className="flex items-center gap-2">
                                 <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)] animate-pulse" />
                                 <div className="text-3xl font-black text-foreground tracking-tighter">SECURE</div>
@@ -104,22 +104,22 @@ export default function AllWorkspacesPage() {
 
                                     <div className="space-y-1">
                                         <h3 className="text-lg font-black text-foreground uppercase tracking-tight truncate">{ws.name}</h3>
-                                        <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest opacity-40">Passkey: {ws.passKey || 'UNSECURED'}</p>
+                                        <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest opacity-40">Invite Code: {ws.passKey || 'UNAVAILABLE'}</p>
                                     </div>
 
                                     <p className="text-[11px] text-muted-foreground leading-relaxed font-bold uppercase tracking-tight opacity-70 group-hover:opacity-100 transition-opacity line-clamp-2 min-h-8">
-                                        {ws.description || "Synchronized tactical environment for cross-workspace operations and mission logic."}
+                                        {ws.description || "Manage your projects and team members in this workspace."}
                                     </p>
 
                                     <div className="flex items-center justify-between pt-6 border-t border-border/50">
                                         <div className="flex items-center gap-4">
                                             <div className="flex flex-col gap-1">
-                                                <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40">Protocol</span>
-                                                <span className="text-[10px] font-black text-foreground uppercase tracking-tight">{ws.role || 'Operative'}</span>
+                                                <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40">Role</span>
+                                                <span className="text-[10px] font-black text-foreground uppercase tracking-tight">{ws.role || 'Member'}</span>
                                             </div>
                                             <div className="w-px h-6 bg-border/50" />
                                             <div className="flex flex-col gap-1">
-                                                <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40">Uplink</span>
+                                                <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40">Access</span>
                                                 <span className="text-[10px] font-black text-foreground uppercase tracking-tight">Active</span>
                                             </div>
                                         </div>
@@ -141,8 +141,8 @@ export default function AllWorkspacesPage() {
                                 <Plus size={24} />
                             </div>
                             <div className="mt-4 space-y-1">
-                                <p className="text-xs font-black text-foreground uppercase tracking-widest">Connect New Node</p>
-                                <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-tight opacity-60">Expand network infrastructure</p>
+                                <p className="text-xs font-black text-foreground uppercase tracking-widest">Join Workspace</p>
+                                <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-tight opacity-60">Join another workspace via invite code.</p>
                             </div>
                         </div>
                     </div>

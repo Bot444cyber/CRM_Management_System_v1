@@ -6,10 +6,14 @@ import { cn } from '@/lib/utils';
 import { apiFetch } from '@/lib/apiFetch';
 import {
     Zap, Loader2, Briefcase, Plus, Users, TrendingUp, AlertTriangle,
-    CheckCircle2, Search, Filter, SortAsc, ChevronRight, Calendar, Clock,
-    Hash, Eye, EyeOff, LayoutPanelLeft, ShieldCheck, ArrowRight, Building2, Globe, ArrowLeft, Home,
-    MoreHorizontal, GripVertical, Menu, FilterX, Box, Star
+    MoreHorizontal, GripVertical, Menu, FilterX, Box, Star,
+    CheckCircle,
+    ArrowRight,
+    Calendar,
+    Search,
+    ShieldCheck
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 import { motion, AnimatePresence } from 'motion/react';
 import { useRouter } from 'next/navigation';
@@ -23,6 +27,7 @@ const STATUS_CONFIG: Record<string, { label: string; cls: string; color: string 
     Green: { label: 'On Track', cls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20', color: '#10b981' },
     Yellow: { label: 'At Risk', cls: 'bg-amber-500/10 text-amber-400 border-amber-500/20', color: '#f59e0b' },
     Red: { label: 'Critical', cls: 'bg-rose-500/10 text-rose-400 border-rose-500/20', color: '#ef4444' },
+    Completed: { label: 'Finished', cls: 'bg-zinc-100/10 text-zinc-100 border-zinc-100/20', color: '#f4f4f5' },
 };
 
 const KANBAN_COLUMNS = [
@@ -41,6 +46,8 @@ export default function ProjectsPortfolioPage() {
     const [projects, setProjects] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [priorityFilter, setPriorityFilter] = useState('All');
+    const [statusFilter, setStatusFilter] = useState('All');
     const router = useRouter();
     const { refreshSignal } = useSync();
 
@@ -71,22 +78,36 @@ export default function ProjectsPortfolioPage() {
                 method: 'PATCH',
                 body: JSON.stringify({ status: newStatus })
             });
-            if (!res.ok) fetchProjects(activeWorkspace!.id);
+
+            if (res.ok) {
+                toast.success(`Project moved to ${newStatus}`, {
+                    style: { background: '#18181b', color: '#fff', border: '1px solid #27272a', fontSize: '12px' },
+                    iconTheme: { primary: '#10b981', secondary: '#fff' }
+                });
+            } else {
+                toast.error("Status update failed");
+                fetchProjects(activeWorkspace!.id);
+            }
         } catch (e) {
             console.error(e);
+            toast.error("Connection error");
             fetchProjects(activeWorkspace!.id);
         }
     };
 
     const columnsData = useMemo(() => {
         const data: Record<string, any[]> = { Planning: [], Active: [], Completed: [], Archived: [] };
-        projects.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
-            .forEach(p => {
-                if (data[p.status]) data[p.status].push(p);
-                else data['Planning'].push(p);
-            });
+        projects.filter(p => {
+            const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+            const matchesPriority = priorityFilter === 'All' || p.priority === priorityFilter;
+            const matchesStatus = statusFilter === 'All' || p.health === statusFilter;
+            return matchesSearch && matchesPriority && matchesStatus;
+        }).forEach(p => {
+            if (data[p.status]) data[p.status].push(p);
+            else data['Planning'].push(p);
+        });
         return data;
-    }, [projects, searchQuery]);
+    }, [projects, searchQuery, priorityFilter, statusFilter]);
 
     if (wsLoading || loading) return (
         <div className="h-full w-full flex flex-col items-center justify-center bg-background min-h-[400px] transition-colors duration-500">
@@ -98,10 +119,10 @@ export default function ProjectsPortfolioPage() {
             </div>
             <div className="space-y-2 text-center">
                 <h3 className="text-xs font-black text-foreground uppercase tracking-[0.4em] animate-pulse">
-                    Accessing Portfolio
+                    Loading Projects
                 </h3>
                 <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest opacity-40">
-                    Decrypting Workspace Assets...
+                    Getting your workspace details...
                 </p>
             </div>
         </div>
@@ -115,7 +136,7 @@ export default function ProjectsPortfolioPage() {
                     <button onClick={() => setIsMobileOpen(true)} className="lg:hidden text-muted-foreground hover:text-foreground"><Menu size={20} /></button>
                     <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/20"><Box size={16} /></div>
-                        <h1 className="text-sm font-bold text-foreground">{activeWorkspace?.name || 'Workspace Portfolio'}</h1>
+                        <h1 className="text-sm font-bold text-foreground">{activeWorkspace?.name || 'Your Projects'}</h1>
                     </div>
                 </div>
 
@@ -123,12 +144,36 @@ export default function ProjectsPortfolioPage() {
                     <div className="relative w-64 hidden md:block">
                         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                         <input
-                            placeholder="Filter projects..."
+                            placeholder="Search projects..."
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
                             className="w-full h-9 bg-accent/50 border border-border rounded-xl pl-9 pr-4 text-xs outline-none focus:ring-1 focus:ring-primary/50 transition-all font-medium"
                         />
                     </div>
+
+                    <div className="hidden lg:flex items-center gap-2 bg-secondary/50 border border-border p-1 rounded-xl">
+                        <select
+                            value={priorityFilter}
+                            onChange={e => setPriorityFilter(e.target.value)}
+                            className="bg-transparent text-[10px] font-black uppercase tracking-widest px-2 py-1 outline-none cursor-pointer hover:text-primary transition-colors border-r border-border"
+                        >
+                            <option value="All">All Priority</option>
+                            <option value="High">High</option>
+                            <option value="Medium">Medium</option>
+                            <option value="Low">Low</option>
+                        </select>
+                        <select
+                            value={statusFilter}
+                            onChange={e => setStatusFilter(e.target.value)}
+                            className="bg-transparent text-[10px] font-black uppercase tracking-widest px-2 py-1 outline-none cursor-pointer hover:text-primary transition-colors"
+                        >
+                            <option value="All">All Status</option>
+                            <option value="Green">On Track</option>
+                            <option value="Yellow">At Risk</option>
+                            <option value="Red">Critical</option>
+                        </select>
+                    </div>
+
                     <ThemeToggle />
                 </div>
             </header>
@@ -201,7 +246,9 @@ function KanbanColumn({ col, projects, canManage }: { col: any, projects: any[],
 }
 
 function ProjectCard({ prj, index, canManage }: { prj: any, index: number, canManage: boolean }) {
-    const sCfg = STATUS_CONFIG[prj.health as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.Green;
+    // Override health config if project is completed
+    const effectiveHealth = prj.status === 'Completed' ? 'Completed' : prj.health;
+    const sCfg = STATUS_CONFIG[effectiveHealth as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.Green;
 
     const formatName = (name: string | null, email: string) => {
         if (name) return name;
@@ -250,6 +297,46 @@ function ProjectCard({ prj, index, canManage }: { prj: any, index: number, canMa
                             sCfg.color === '#ef4444' ? 'bg-rose-500' : sCfg.color === '#f59e0b' ? 'bg-amber-500' : 'bg-emerald-500'
                         )} />
 
+                        {/* Project Manager Header */}
+                        <div className="flex items-center justify-between mb-4 border-b border-border/10 pb-3 relative z-10 transition-all group-hover:border-primary/20">
+                            {(() => {
+                                const manager = prj.manager;
+                                return manager ? (
+                                    <div className="flex items-center gap-3">
+                                        <div className="relative">
+                                            <div className="w-8 h-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary text-[10px] font-black uppercase shadow-sm group-hover:border-primary/40 transition-colors overflow-hidden">
+                                                {getInitials(manager.name || manager.email)}
+                                                <div className="absolute inset-0 bg-linear-to-tr from-primary/10 to-transparent" />
+                                            </div>
+                                            <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-primary text-primary-foreground rounded-full border-2 border-background flex items-center justify-center shadow-sm">
+                                                <ShieldCheck size={8} strokeWidth={3} />
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-[7px] font-black text-primary uppercase tracking-[0.2em] leading-none mb-1 group-hover:translate-x-0.5 transition-transform">Project Lead</span>
+                                            <span className="text-[11px] font-black text-foreground leading-tight truncate max-w-[140px] tracking-tight">
+                                                {formatName(manager.name, manager.email)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-3 grayscale opacity-30 group-hover:opacity-100 group-hover:grayscale-0 transition-all duration-500">
+                                        <div className="w-8 h-8 rounded-xl bg-secondary border border-border flex items-center justify-center text-muted-foreground text-[10px] font-black">
+                                            ??
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-[7px] font-black text-muted-foreground uppercase tracking-[0.2em] leading-none mb-1">Unassigned</span>
+                                            <span className="text-[11px] font-bold text-muted-foreground/40 leading-tight">No Manager</span>
+                                        </div>
+                                    </div>
+                                );
+                            })()}
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest opacity-40">{prj.priority}</span>
+                                <div className={cn("w-1 h-1 rounded-full", prj.priority === 'High' ? 'bg-rose-500 shadow-[0_0_5px_rgba(244,63,94,0.5)]' : prj.priority === 'Medium' ? 'bg-amber-500' : 'bg-emerald-500')} />
+                            </div>
+                        </div>
+
                         <div className="flex items-center justify-between mb-5 relative z-10">
                             <div className={cn("px-2.5 py-1 rounded-full text-[8px] font-black border flex items-center gap-1.5 uppercase tracking-widest backdrop-blur-md transition-all group-hover:scale-105", sCfg.cls)}>
                                 <div className="w-1.5 h-1.5 rounded-full bg-current shadow-[0_0_8px_currentColor] animate-pulse" />
@@ -264,7 +351,7 @@ function ProjectCard({ prj, index, canManage }: { prj: any, index: number, canMa
                             <h4 className="text-[13px] font-black text-foreground group-hover:text-primary transition-colors leading-tight uppercase tracking-tight mb-1">
                                 {prj.name}
                             </h4>
-                            <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest opacity-40">Phase: {prj.status || 'Evolution'}</p>
+                            <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest opacity-40">Status: {prj.status || 'In Progress'}</p>
                         </div>
 
                         <div className="space-y-5 relative z-10">
@@ -273,7 +360,7 @@ function ProjectCard({ prj, index, canManage }: { prj: any, index: number, canMa
                                 <div className="flex justify-between items-center px-0.5">
                                     <div className="flex items-center gap-1.5">
                                         <TrendingUp size={10} className="text-primary/60" />
-                                        <span className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.15em] opacity-60">Velocity Matrix</span>
+                                        <span className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.15em] opacity-60">Progress</span>
                                     </div>
                                     <span className="text-[10px] font-black text-primary tracking-tighter">{prj.priority === 'High' ? '85' : '45'}%</span>
                                 </div>
@@ -282,9 +369,13 @@ function ProjectCard({ prj, index, canManage }: { prj: any, index: number, canMa
                                         initial={{ width: 0 }}
                                         animate={{ width: `${prj.priority === 'High' ? 85 : 45}%` }}
                                         transition={{ duration: 1.5, ease: "easeOut" }}
-                                        className="h-full bg-linear-to-r from-zinc-100 to-white dark:from-white dark:to-zinc-100 rounded-full relative"
+                                        className="h-full bg-linear-to-r from-zinc-100 via-white to-zinc-100 dark:from-zinc-800 dark:via-white dark:to-zinc-800 rounded-full relative"
                                     >
-                                        <div className="absolute inset-0 bg-white/20 blur-[2px]" />
+                                        <motion.div
+                                            animate={{ x: ['-100%', '200%'] }}
+                                            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                            className="absolute inset-0 bg-linear-to-r from-transparent via-white/40 to-transparent w-1/2 blur-sm"
+                                        />
                                     </motion.div>
                                 </div>
                             </div>
@@ -322,9 +413,13 @@ function ProjectCard({ prj, index, canManage }: { prj: any, index: number, canMa
 
                                 <Link
                                     href={`/projects/${prj.id}`}
-                                    className="px-3 py-2 bg-foreground/5 hover:bg-foreground text-foreground hover:text-background rounded-xl border border-border/50 hover:border-foreground transition-all duration-500 active:scale-95 shadow-xs flex items-center justify-center group/btn shrink-0"
+                                    className="group/btn relative overflow-hidden h-9 pl-4 pr-3 bg-secondary/30 hover:bg-foreground text-foreground hover:text-background rounded-xl border border-border/50 hover:border-foreground transition-all duration-500 flex items-center gap-2 active:scale-95 shadow-xs shrink-0"
                                 >
-                                    <ArrowRight size={14} className="group-hover/btn:translate-x-0.5 transition-transform duration-300" />
+                                    <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] relative z-10 translate-x-1 group-hover:translate-x-0 transition-transform duration-500">
+                                        View
+                                    </span>
+                                    <ArrowRight size={14} className="relative z-10 group-hover/btn:translate-x-1 transition-transform duration-500" />
                                 </Link>
                             </div>
                         </div>

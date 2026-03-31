@@ -45,7 +45,7 @@ const DEFAULT_WIDGETS: WidgetConfig[] = [
 ];
 
 const TABS: { id: Tab; icon: React.ElementType; label: string }[] = [
-    { id: 'overview', icon: Layout, label: 'Control Center' },
+    { id: 'overview', icon: Layout, label: 'Overview' },
     { id: 'milestones', icon: Flag, label: 'Milestones' },
     { id: 'resources', icon: Box, label: 'Resources' },
     { id: 'team', icon: Users, label: 'Team' },
@@ -86,13 +86,29 @@ export default function ProjectDashboardPage() {
     const [requests, setRequests] = useState<any[]>([]);
     const [reminders, setReminders] = useState<any[]>([]);
     const [pulse, setPulse] = useState<any[]>([]);
-    const activeTab = (searchParams.get('tab') as Tab) || 'overview';
+    const requestedTab = (searchParams.get('tab') as Tab) || 'overview';
     const [loading, setLoading] = useState(true);
     const [showCustomizer, setShowCustomizer] = useState(false);
     const [widgets, setWidgets] = useState<WidgetConfig[]>(DEFAULT_WIDGETS);
     const [currentUser, setCurrentUser] = useState<any>(null);
     const [members, setMembers] = useState<any[]>([]);
     const [saving, setSaving] = useState(false);
+
+    const getEffectiveRole = () => {
+        if (!currentUser || !project || !members) return 'user';
+
+        // Check if user is the organization owner or admin
+        if (project.workspace?.userId === currentUser.userId || workspaceRole === 'owner' || workspaceRole === 'admin') return 'admin';
+
+        // Check project-specific membership role
+        const member = members.find(m => m.userId === currentUser.userId);
+        return member?.projectRole || 'user';
+    };
+
+    const currentUserRole = getEffectiveRole();
+    const isManager = ['admin', 'manager', 'owner'].includes(currentUserRole);
+    const activeTab = isManager ? requestedTab : 'milestones';
+    const activeView = searchParams.get('view') || (isManager ? 'list' : 'board');
 
     const fetchProjectData = async () => {
         try {
@@ -142,18 +158,7 @@ export default function ProjectDashboardPage() {
         router.push(`?${params.toString()}`);
     };
 
-    const getEffectiveRole = () => {
-        if (!currentUser || !project || !members) return 'user';
 
-        // Check if user is the organization owner or admin
-        if (project.workspace?.userId === currentUser.userId || workspaceRole === 'owner' || workspaceRole === 'admin') return 'admin';
-
-        // Check project-specific membership role
-        const member = members.find(m => m.userId === currentUser.userId);
-        return member?.projectRole || 'user';
-    };
-
-    const currentUserRole = getEffectiveRole();
 
     if (loading) return (
         <div className="h-full w-full flex flex-col items-center justify-center bg-background min-h-[400px] transition-colors duration-500">
@@ -165,10 +170,10 @@ export default function ProjectDashboardPage() {
             </div>
             <div className="space-y-2 text-center">
                 <h3 className="text-xs font-black text-foreground uppercase tracking-[0.4em] animate-pulse">
-                    Synchronizing Grid
+                    Loading Dashboard
                 </h3>
                 <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest opacity-40">
-                    Establishing Tactical Uplink...
+                    Connecting to server...
                 </p>
             </div>
         </div>
@@ -454,26 +459,13 @@ export default function ProjectDashboardPage() {
                         <div className="flex flex-col">
                             <div className="flex items-center gap-2">
                                 <h1 className="text-sm font-black text-foreground uppercase tracking-tight leading-none">
-                                    {project?.name || 'Loading Architecture...'}
+                                    {project?.name || 'Loading project...'}
                                 </h1>
                                 <RoleBadge role={currentUserRole} />
                             </div>
                         </div>
                     </div>
-                    <nav className="hidden lg:flex items-center gap-1 p-1 rounded-xl bg-secondary border border-border">
-                        {TABS.filter(tab => currentUserRole === 'admin' || tab.id !== 'settings').map(tab => (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                className={cn(
-                                    "px-4 py-1.5 rounded-lg text-[11px] font-bold transition-all duration-200 whitespace-nowrap uppercase tracking-wider",
-                                    activeTab === tab.id ? "bg-background text-foreground shadow-sm border border-border" : "text-muted-foreground hover:text-foreground"
-                                )}
-                            >
-                                {tab.label}
-                            </button>
-                        ))}
-                    </nav>
+
                 </div>
 
                 <div className="flex items-center gap-4">
@@ -481,21 +473,7 @@ export default function ProjectDashboardPage() {
                 </div>
             </header >
 
-            {/* Mobile Tab Nav */}
-            <div className="lg:hidden flex border-b border-border overflow-x-auto no-scrollbar bg-card/20 shrink-0">
-                {TABS.filter(tab => currentUserRole === 'admin' || tab.id !== 'settings').map(tab => (
-                    <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
-                        className={cn(
-                            "px-4 py-3 text-[10px] font-bold transition-all border-b-2 uppercase tracking-widest whitespace-nowrap",
-                            activeTab === tab.id ? "border-primary text-primary bg-primary/5" : "border-transparent text-muted-foreground"
-                        )}
-                    >
-                        {tab.label}
-                    </button>
-                ))}
-            </div>
+
 
             {/* Content Area - Independent Scroll */}
             < main className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6 custom-scrollbar scroll-smooth bg-background" >
@@ -506,10 +484,10 @@ export default function ProjectDashboardPage() {
                             {/* Summary Grid */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                                 {[
-                                    { label: 'Operational Health', value: project.health, icon: CheckCircle2, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+                                    { label: 'Project Health', value: project.health, icon: CheckCircle2, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
                                     { label: 'Total Progress', value: `${totalProgress}%`, icon: TrendingUp, color: 'text-primary', bg: 'bg-primary/10' },
                                     { label: 'Active Team', value: members.length, icon: Users, color: 'text-blue-500', bg: 'bg-blue-500/10' },
-                                    { label: 'Security Level', value: 'Verified', icon: Shield, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+                                    { label: 'Status', value: 'Live', icon: Shield, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
                                 ].map((stat) => (
                                     <div key={stat.label} className="bg-card/40 border border-border/50 p-5 rounded-2xl hover:border-border transition-all shadow-sm">
                                         <div className="flex items-center justify-between mb-4">
@@ -539,7 +517,7 @@ export default function ProjectDashboardPage() {
                                     <div className="w-16 h-16 bg-card rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm">
                                         <Layout size={32} className="text-muted-foreground/30" />
                                     </div>
-                                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1">Control Center Empty</p>
+                                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1">Dashboard Empty</p>
                                     <p className="text-[10px] text-muted-foreground uppercase tracking-tight">No widgets are currently active in this workspace.</p>
                                 </div>
                             )}
@@ -547,7 +525,7 @@ export default function ProjectDashboardPage() {
                     )}
 
                     <div className="pb-20 h-full">
-                        {activeTab === 'milestones' && <MilestoneView projectId={projectId} milestones={milestones} currentUserRole={currentUserRole} refresh={fetchProjectData} />}
+                        {activeTab === 'milestones' && <MilestoneView projectId={projectId} milestones={milestones} members={members} currentUser={currentUser} currentUserRole={currentUserRole} refresh={fetchProjectData} viewMode={activeView as any} />}
                         {activeTab === 'resources' && <ResourceView projectId={projectId} requests={requests} currentUserRole={currentUserRole} refresh={fetchProjectData} />}
                         {activeTab === 'team' && <TeamView projectId={projectId} workspaceId={project.workspaceId} currentUserRole={currentUserRole} refresh={fetchProjectData} />}
                         {activeTab === 'pulse' && <PulseView projectId={projectId} />}
@@ -568,7 +546,7 @@ export default function ProjectDashboardPage() {
                                         <div className="w-10 h-10 bg-primary/10 text-primary rounded-xl flex items-center justify-center">
                                             <Layout size={20} />
                                         </div>
-                                        <h3 className="text-lg font-bold tracking-tight">Layout Settings</h3>
+                                        <h3 className="text-lg font-bold tracking-tight">Dashboard Layout</h3>
                                     </div>
                                     <button onClick={() => setShowCustomizer(false)} className="p-2 hover:bg-accent rounded-lg transition-colors">
                                         <X size={20} />

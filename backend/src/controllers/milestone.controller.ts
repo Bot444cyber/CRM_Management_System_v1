@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { db } from "../config/db";
-import { projectMilestones, activityLogs } from "../db/schema";
+import { projectMilestones, activityLogs, users } from "../db/schema";
 import { eq } from "drizzle-orm";
 import crypto from "crypto";
 import { hasManagerialAccess } from "./team.controller";
@@ -8,7 +8,23 @@ import { hasManagerialAccess } from "./team.controller";
 export const getProjectMilestones = async (req: Request, res: Response): Promise<void> => {
     try {
         const { id } = req.params;
-        const rows = await db.select().from(projectMilestones).where(eq(projectMilestones.projectId, id as string));
+        const rows = await db.select({
+            id: projectMilestones.id,
+            projectId: projectMilestones.projectId,
+            name: projectMilestones.name,
+            description: projectMilestones.description,
+            status: projectMilestones.status,
+            dueDate: projectMilestones.dueDate,
+            progress: projectMilestones.progress,
+            assignedTo: projectMilestones.assignedTo,
+            priority: projectMilestones.priority,
+            createdAt: projectMilestones.createdAt,
+            assigneeName: users.name,
+            assigneeEmail: users.email
+        }).from(projectMilestones)
+            .leftJoin(users, eq(projectMilestones.assignedTo, users.id))
+            .where(eq(projectMilestones.projectId, id as string));
+
         res.status(200).json(rows);
     } catch (error) {
         console.error("Error fetching milestones:", error);
@@ -19,7 +35,7 @@ export const getProjectMilestones = async (req: Request, res: Response): Promise
 export const createProjectMilestone = async (req: Request, res: Response): Promise<void> => {
     try {
         const { id } = req.params;
-        const { name, description, dueDate } = req.body;
+        const { name, description, dueDate, assignedTo, priority } = req.body;
         const requesterId = req.user?.userId;
 
         if (!requesterId) {
@@ -44,6 +60,8 @@ export const createProjectMilestone = async (req: Request, res: Response): Promi
             name,
             description: description || null,
             dueDate: dueDate ? new Date(dueDate) : null,
+            assignedTo: assignedTo || null,
+            priority: priority || "Medium"
         });
 
         res.status(201).json({ message: "Milestone created", id: milestoneId });
@@ -56,17 +74,20 @@ export const createProjectMilestone = async (req: Request, res: Response): Promi
 export const updateProjectMilestone = async (req: Request, res: Response): Promise<void> => {
     try {
         const { id, milestoneId } = req.params;
-        const { status, progress } = req.body;
+        const { status, progress, assignedTo, priority, name, description, dueDate } = req.body;
 
         await db.update(projectMilestones).set({
             ...(status ? { status } : {}),
-            ...(progress !== undefined ? { progress } : {})
+            ...(progress !== undefined ? { progress } : {}),
+            ...(assignedTo !== undefined ? { assignedTo } : {}),
+            ...(priority ? { priority } : {}),
+            ...(name ? { name } : {}),
+            ...(description ? { description } : {}),
+            ...(dueDate ? { dueDate: new Date(dueDate) } : {})
         }).where(eq(projectMilestones.id, milestoneId as string));
 
         // Pulse Event on Status Update
         if (status) {
-
-
             if (status === "Completed") {
                 const userId = req.user?.userId;
                 if (userId) {

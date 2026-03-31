@@ -156,10 +156,10 @@ export default function GlobalTeamPage() {
             </div>
             <div className="space-y-2 text-center">
                 <h3 className="text-xs font-black text-foreground uppercase tracking-[0.4em] animate-pulse">
-                    Synchronizing Personnel
+                    Loading Team
                 </h3>
                 <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest opacity-40">
-                    Establishing Neural Uplink...
+                    Connecting...
                 </p>
             </div>
         </div>
@@ -180,7 +180,7 @@ export default function GlobalTeamPage() {
                                 Team Management
                                 {activeWorkspace && <span className="text-[10px] bg-secondary text-muted-foreground px-1.5 py-0.5 rounded-md font-medium border border-border/50">{activeWorkspace.name}</span>}
                             </h1>
-                            <p className="text-[10px] text-muted-foreground mt-0.5 font-medium">{filteredMembers.length} active members across selected grid</p>
+                            <p className="text-[10px] text-muted-foreground mt-0.5 font-medium">{filteredMembers.length} active members across selected workspace</p>
                         </div>
                     </div>
                 </div>
@@ -188,7 +188,7 @@ export default function GlobalTeamPage() {
                 <div className="flex items-center gap-4">
                     {displayedInviteWorkspaces.map(ws => (
                         <div key={ws.id} className="hidden md:flex items-center gap-3 pl-4 border-l border-border">
-                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Workspace Code</span>
+                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Invite Code</span>
                             <div className="flex items-center gap-1 bg-secondary border border-border rounded-md px-2 py-1">
                                 <code className="text-xs font-mono font-bold text-emerald-500">{ws.passKey}</code>
                                 <button
@@ -246,7 +246,7 @@ export default function GlobalTeamPage() {
                                     }}
                                     className="bg-transparent text-[11px] font-bold uppercase tracking-wider outline-none text-muted-foreground hover:text-foreground transition-colors"
                                 >
-                                    <option value="all">Global Workspace</option>
+                                    <option value="all">All Workspaces</option>
                                     {workspaces.map(ws => (
                                         <option key={ws.id} value={ws.id}>{ws.name}</option>
                                     ))}
@@ -274,8 +274,8 @@ export default function GlobalTeamPage() {
                                 <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mb-4">
                                     <Users size={24} className="text-muted-foreground" />
                                 </div>
-                                <h3 className="text-sm font-bold uppercase tracking-widest text-foreground">No personnel found</h3>
-                                <p className="text-xs mt-1 text-muted-foreground">Adjust filters or search criteria to locate agents</p>
+                                <h3 className="text-sm font-bold uppercase tracking-widest text-foreground">No members found</h3>
+                                <p className="text-xs mt-1 text-muted-foreground">Adjust filters or search criteria to locate members</p>
                             </div>
                         )}
                     </div>
@@ -342,7 +342,7 @@ function MemberCard({ m, idx, onUpdateRole, onRemove }: { m: any, idx: number, o
                             <span className="text-muted-foreground/30">●</span>
                             <div className="flex items-center gap-1.5">
                                 <Shield size={10} />
-                                <span>L-Secure</span>
+                                <span>Secure</span>
                             </div>
                         </div>
                     </div>
@@ -366,7 +366,7 @@ function MemberCard({ m, idx, onUpdateRole, onRemove }: { m: any, idx: number, o
                                 <button
                                     onClick={() => onRemove(m.workspaceId, m.id)}
                                     className="w-8 h-8 rounded-lg bg-background border border-border text-muted-foreground hover:text-destructive hover:border-destructive/30 hover:bg-destructive/5 flex items-center justify-center transition-all"
-                                    title="Remove Personnel"
+                                    title="Remove Member"
                                 >
                                     <Trash2 size={14} />
                                 </button>
@@ -375,7 +375,7 @@ function MemberCard({ m, idx, onUpdateRole, onRemove }: { m: any, idx: number, o
                             <div className="w-full flex items-center justify-center py-1.5 bg-amber-500/5 border border-amber-500/10 rounded-lg">
                                 <span className="text-[9px] font-bold text-amber-500 uppercase tracking-widest flex items-center gap-1.5">
                                     <ShieldCheck size={10} />
-                                    Account Progenitor
+                                    Workspace Owner
                                 </span>
                             </div>
                         )}

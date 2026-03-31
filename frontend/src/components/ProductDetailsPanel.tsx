@@ -225,7 +225,7 @@ const ProductDetailsPanel = ({ isOpen, onClose, product, onSave }: ProductDetail
                     />
 
                     {/* Content */}
-                    <div className="flex-1 overflow-y-auto p-6 space-y-5">
+                    <div className="flex-1 overflow-y-auto p-6 space-y-5 custom-scrollbar">
 
                         {/* Image URL + Live Preview */}
                         <div className="space-y-2">

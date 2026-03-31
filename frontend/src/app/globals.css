@@ -137,35 +137,65 @@
   }
 }
 
-/* Custom Scrollbar Styles */
+/* Global Scrollbar Styles (Always Dark for Premium Look across main site) */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
 
 ::-webkit-scrollbar-track {
+  background: oklch(0 0 0) !important;
+  /* Force Pure Black for global */
+}
+
+::-webkit-scrollbar-thumb {
+  background: oklch(0.205 0.005 285.823) !important;
+  /* Zinc 800 */
+  border-radius: 8px;
+  border: 3px solid oklch(0 0 0) !important;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.3 0 0) !important;
+}
+
+::-webkit-scrollbar-corner {
+  background: oklch(0 0 0) !important;
+}
+
+/* Force dark color-scheme for roots that don't have .custom-scrollbar */
+:root {
+  scrollbar-color: oklch(0.205 0.005 285.823) oklch(0 0 0);
+}
+
+/* Theme-aware Custom Scrollbar */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklch, var(--muted-foreground), transparent 50%) var(--background);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
   background: var(--background);
   border-left: 1px solid var(--border);
 }
 
-::-webkit-scrollbar-thumb {
+.custom-scrollbar::-webkit-scrollbar-thumb {
   background: color-mix(in oklch, var(--muted-foreground), transparent 50%);
   border-radius: 8px;
   border: 3px solid var(--background);
 }
 
-::-webkit-scrollbar-thumb:hover {
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: var(--muted-foreground);
 }
 
-::-webkit-scrollbar-corner {
+.custom-scrollbar::-webkit-scrollbar-corner {
   background: var(--background);
-}
-
-/* Firefox compatibility */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: color-mix(in oklch, var(--muted-foreground), transparent 50%) var(--background);
 }
 
 /* Hide scrollbars but keep functionality */

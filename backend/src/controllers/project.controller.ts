@@ -430,16 +430,20 @@ export const getProjects = async (req: Request, res: Response): Promise<void> =>
             const members = await db
                 .select({
                     email: users.email,
-                    name: users.name
+                    name: users.name,
+                    role: projectMembers.role
                 })
                 .from(projectMembers)
                 .innerJoin(users, eq(projectMembers.userId, users.id))
                 .where(eq(projectMembers.projectId, prj.id));
 
+            const manager = members.find(m => m.role === 'manager' || m.role === 'admin');
+
             result.push({
                 ...prj,
                 health,
                 atRiskCount,
+                manager: manager || null,
                 projectMembers: members.slice(0, 3).map(m => ({
                     email: m.email,
                     name: m.name

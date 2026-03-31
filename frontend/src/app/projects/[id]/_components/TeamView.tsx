@@ -190,7 +190,7 @@ export default function TeamView({ projectId, workspaceId, currentUserRole = 'de
                         <Users size={20} />
                     </div>
                     <div>
-                        <h2 className="text-lg font-black text-foreground uppercase tracking-tight">Team Matrix</h2>
+                        <h2 className="text-lg font-black text-foreground uppercase tracking-tight">Team Members</h2>
                     </div>
                 </div>
                 {canManage && (
@@ -199,7 +199,7 @@ export default function TeamView({ projectId, workspaceId, currentUserRole = 'de
                         className="flex items-center gap-2 bg-primary hover:opacity-90 text-primary-foreground px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-primary/20"
                     >
                         <UserPlus size={16} />
-                        Recruit Member
+                        Add Member
                     </button>
                 )}
             </div>
@@ -214,7 +214,7 @@ export default function TeamView({ projectId, workspaceId, currentUserRole = 'de
                     >
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                             <div className="space-y-2.5 relative">
-                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Search Database</label>
+                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Search Users</label>
                                 <div className="relative group/search">
                                     <input
                                         value={userSearch}
@@ -222,7 +222,7 @@ export default function TeamView({ projectId, workspaceId, currentUserRole = 'de
                                             setUserSearch(e.target.value);
                                             if (newUserId) setNewUserId('');
                                         }}
-                                        placeholder="Identification email..."
+                                        placeholder="Email address..."
                                         className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm font-bold text-foreground focus:ring-1 focus:ring-primary/50 outline-none transition-all placeholder:opacity-30"
                                     />
                                     <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
@@ -256,7 +256,7 @@ export default function TeamView({ projectId, workspaceId, currentUserRole = 'de
                                                         <span className="text-xs font-black text-foreground uppercase tracking-tight group-hover:text-primary transition-colors">{formatName(user.name, user.email)}</span>
                                                         <span className="text-[9px] text-muted-foreground font-bold tracking-widest opacity-40 uppercase">{user.email}</span>
                                                     </div>
-                                                    <span className="text-[9px] text-muted-foreground font-black uppercase tracking-widest opacity-20">UPLINK ID: {user.id}</span>
+                                                    <span className="text-[9px] text-muted-foreground font-black uppercase tracking-widest opacity-20">ID: {user.id}</span>
                                                 </button>
                                             ))}
                                         </motion.div>
@@ -265,7 +265,7 @@ export default function TeamView({ projectId, workspaceId, currentUserRole = 'de
                             </div>
 
                             <div className="space-y-2.5">
-                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Assign Node Role</label>
+                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Assign Role</label>
                                 <div className="relative">
                                     <select
                                         value={newRole}
@@ -286,7 +286,7 @@ export default function TeamView({ projectId, workspaceId, currentUserRole = 'de
                                     disabled={saving || !newUserId}
                                     className="flex-1 bg-foreground hover:opacity-90 text-background h-12 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-foreground/10 disabled:opacity-50"
                                 >
-                                    {saving ? "Uplinking..." : "Authorize Recruit"}
+                                    {saving ? "Adding..." : "Add to Team"}
                                 </button>
                                 <button
                                     onClick={() => setShowAdd(false)}
@@ -304,7 +304,7 @@ export default function TeamView({ projectId, workspaceId, currentUserRole = 'de
                                         <FingerIcon size={20} className="text-primary opacity-60" />
                                     </div>
                                     <div className="space-y-0.5">
-                                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Encrypted Referral Token</p>
+                                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Invite Code</p>
                                         <p className="text-sm font-mono font-black text-foreground tracking-tighter">{invitation.code}</p>
                                     </div>
                                 </div>
@@ -327,7 +327,7 @@ export default function TeamView({ projectId, workspaceId, currentUserRole = 'de
                             <div className="w-12 h-12 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
                             <RefreshCw size={16} className="absolute inset-0 m-auto text-primary animate-pulse" />
                         </div>
-                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Synchronizing neural link data...</p>
+                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Loading team members...</p>
                     </div>
                 ) : members.length === 0 ? (
                     <div className="py-24 text-center space-y-6">
@@ -335,8 +335,8 @@ export default function TeamView({ projectId, workspaceId, currentUserRole = 'de
                             <Users size={40} className="text-muted-foreground group-hover:scale-110 transition-transform" />
                         </div>
                         <div className="space-y-1">
-                            <p className="text-sm font-black text-foreground uppercase tracking-tight">Workspace Void Detected</p>
-                            <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest opacity-40">No active entities assigned to this sector.</p>
+                            <p className="text-sm font-black text-foreground uppercase tracking-tight">No members found</p>
+                            <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest opacity-40">No members have been added to this project yet.</p>
                         </div>
                     </div>
                 ) : (
@@ -344,10 +344,10 @@ export default function TeamView({ projectId, workspaceId, currentUserRole = 'de
                         <table className="w-full text-left border-collapse">
                             <thead className="bg-secondary/50 border-b border-border/50">
                                 <tr>
-                                    <th className="px-6 py-5 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Entity Signature</th>
-                                    <th className="px-6 py-5 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Sector Authority</th>
-                                    <th className="px-6 py-5 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Commissioned</th>
-                                    {canManage && <th className="px-6 py-5 text-[10px] font-black text-muted-foreground uppercase tracking-widest text-right">Commands</th>}
+                                    <th className="px-6 py-5 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Name</th>
+                                    <th className="px-6 py-5 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Role</th>
+                                    <th className="px-6 py-5 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Joined On</th>
+                                    {canManage && <th className="px-6 py-5 text-[10px] font-black text-muted-foreground uppercase tracking-widest text-right">Actions</th>}
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border/30">
@@ -380,7 +380,7 @@ export default function TeamView({ projectId, workspaceId, currentUserRole = 'de
                                                 <button
                                                     onClick={() => handleRemove(m.memberId)}
                                                     className="w-10 h-10 flex items-center justify-center ml-auto bg-background hover:bg-destructive/10 text-muted-foreground hover:text-destructive rounded-xl border border-border hover:border-destructive/50 transition-all opacity-0 group-hover/row:opacity-100 shadow-xs group/del"
-                                                    title="Deauthorize Entity"
+                                                    title="Remove Member"
                                                 >
                                                     <Trash2 size={16} className="group-hover/del:rotate-12 transition-transform" />
                                                 </button>

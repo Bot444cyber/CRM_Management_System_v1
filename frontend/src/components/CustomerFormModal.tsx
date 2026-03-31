@@ -155,7 +155,7 @@ export default function CustomerFormModal({
                 </div>
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
+                <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
                     {fields.map(f => (
                         <div key={f.key}>
                             <label className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">

@@ -59,7 +59,7 @@ const Sidebar = ({ onClose }: { onClose?: () => void }) => {
   return (
     <div className="flex flex-col h-screen border-r border-border bg-sidebar overflow-hidden">
       {/* Main Sidebar Content */}
-      <div className="w-[280px] flex flex-col py-6 px-4 overflow-y-auto overflow-x-hidden flex-1">
+      <div className="w-[280px] flex flex-col py-6 px-4 overflow-y-auto overflow-x-hidden flex-1 custom-scrollbar">
 
         {/* Logo / Header */}
         <Link href="/" className="flex items-center gap-3 px-2 mb-8 group hover:opacity-90 transition-opacity">

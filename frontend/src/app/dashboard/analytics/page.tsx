@@ -281,7 +281,7 @@ const Analytics = () => {
                                         className="w-7 h-7 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors text-sm"
                                     >✕</button>
                                 </div>
-                                <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
+                                <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2 custom-scrollbar">
                                     {dayDetail.loading ? (
                                         Array.from({ length: 4 }).map((_, i) => (
                                             <div key={i} className="h-14 bg-muted animate-pulse rounded-lg" />

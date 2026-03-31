@@ -73,7 +73,7 @@ export default function ChatPage() {
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'sectors' | 'dms'>('sectors');
+    const [activeTab, setActiveTab] = useState<'channels' | 'dms'>('channels');
     const [isMobileConversationOpen, setIsMobileConversationOpen] = useState(false);
     const { setIsMobileOpen } = useSidebar();
     const { activeWorkspace } = useWorkspace();
@@ -81,7 +81,7 @@ export default function ChatPage() {
     const scrollRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-    const [currentUser, setCurrentUser] = useState<any>({ id: 0, name: 'Lead Operative' });
+    const [currentUser, setCurrentUser] = useState<any>({ id: 0, name: 'User' });
     const POLLING_INTERVAL = 2000;
 
     const [error, setError] = useState<string | null>(null);
@@ -110,7 +110,9 @@ export default function ChatPage() {
             const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/chat/members?workspaceId=${activeWorkspace.id}`);
             if (res.ok) {
                 const data = await res.json();
-                setMembers(data);
+                const memberMap = new Map();
+                data.forEach((m: any) => memberMap.set(m.id, m));
+                setMembers(Array.from(memberMap.values()));
             }
         } catch (e) {
             console.error("Failed to fetch workspace members:", e);
@@ -135,25 +137,27 @@ export default function ChatPage() {
                         ...c,
                         name: label,
                         otherMemberEmail: c.otherMemberEmail, // Ensure email is passed
-                        lastMessage: c.lastMessage || 'Link established...',
+                        lastMessage: c.lastMessage || 'No messages yet...',
                         lastMessageTime: c.lastMessageTime || 'Just now',
                         unreadCount: c.unreadCount || 0,
                         avatar: c.type === 'dm' ? undefined : `https://api.dicebear.com/7.x/initials/svg?seed=${label}`
                     };
                 });
 
-                setChannels(enrichedData);
+                const channelMap = new Map();
+                enrichedData.forEach((c: any) => channelMap.set(c.id, c));
+                setChannels(Array.from(channelMap.values()));
                 if (enrichedData.length > 0 && !activeChannel) {
                     const general = enrichedData.find((c: any) => c.name.toLowerCase() === 'general');
                     setActiveChannel(general || enrichedData[0]);
                 }
             } else if (res.status === 403) {
-                setError("Authorization Required: This sector is restricted.");
+                setError("No Permission: This channel is restricted.");
             } else {
-                setError("Protocol synchronization failed.");
+                setError("Failed to load channels.");
             }
         } catch (e) {
-            setError("Connection failure: Encryption nodes offline.");
+            setError("Connection failed: Server is offline.");
         } finally {
             setLoading(false);
         }
@@ -180,8 +184,14 @@ export default function ChatPage() {
                 const newMessages: Message[] = await res.json();
                 if (newMessages.length > 0) {
                     setMessages(prev => {
+                        // Remove optimistic messages that are now fulfilled by the server
                         const filteredPrev = prev.filter(m => !newMessages.find(nm => nm.content === m.content && m.isOptimistic));
-                        const combined = [...filteredPrev, ...newMessages];
+
+                        // Use a Map to ensure each message ID is unique
+                        const messageMap = new Map();
+                        [...filteredPrev, ...newMessages].forEach(m => messageMap.set(m.id, m));
+
+                        const combined = Array.from(messageMap.values());
                         return combined.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
                     });
                 }
@@ -263,13 +273,13 @@ export default function ChatPage() {
             });
 
             if (!res.ok) {
-                toast.error("Packet transmission failed");
+                toast.error("Message failed to send");
                 setMessages(prev => prev.filter(m => m.id !== optimisticMsg.id));
             } else {
                 fetchMessages(true);
             }
         } catch (e) {
-            toast.error("Network instability detected");
+            toast.error("Connection error");
             setMessages(prev => prev.filter(m => m.id !== optimisticMsg.id));
         }
     };
@@ -294,7 +304,7 @@ export default function ChatPage() {
                 });
             }
         } catch (e) {
-            toast.error("Failed to establish direct link");
+            toast.error("Failed to start direct message");
         }
     };
 
@@ -315,10 +325,10 @@ export default function ChatPage() {
             </div>
             <div className="space-y-2 text-center">
                 <h3 className="text-xs font-black text-foreground uppercase tracking-[0.4em] animate-pulse">
-                    Initializing Secure Grid
+                    Loading Chat...
                 </h3>
                 <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest opacity-40">
-                    Synchronizing Encryption Nodes...
+                    Connecting...
                 </p>
             </div>
         </div>
@@ -329,7 +339,7 @@ export default function ChatPage() {
             <div className="w-20 h-20 rounded-[2.5rem] bg-destructive/5 border border-destructive/20 flex items-center justify-center mb-8 shadow-2xl shadow-destructive/10">
                 <Shield size={32} className="text-destructive" />
             </div>
-            <h3 className="text-sm font-black uppercase tracking-[0.2em] text-foreground mb-3 leading-none">Authorization Breach</h3>
+            <h3 className="text-sm font-black uppercase tracking-[0.2em] text-foreground mb-3 leading-none">Access Denied</h3>
             <p className="text-[11px] text-muted-foreground max-w-sm leading-relaxed mb-8 uppercase font-bold tracking-tight opacity-70">
                 {error}
             </p>
@@ -337,7 +347,7 @@ export default function ChatPage() {
                 onClick={() => fetchChannels()}
                 className="px-10 py-4 bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-widest rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/20"
             >
-                Retry Uplink
+                Retry
             </button>
         </div>
     );
@@ -366,20 +376,20 @@ export default function ChatPage() {
                     <div className="relative mb-6">
                         <input
                             type="text"
-                            placeholder="Search sectors..."
+                            placeholder="Search channels..."
                             className="w-full bg-accent/20 border border-border/80 rounded-xl py-2.5 pl-9 pr-4 text-xs font-medium text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all focus:bg-accent/40 shadow-inner"
                         />
                     </div>
                     {/* Tabs */}
                     <div className="flex gap-2 bg-accent/30 p-1 rounded-xl border border-border/50">
                         <button
-                            onClick={() => setActiveTab('sectors')}
+                            onClick={() => setActiveTab('channels')}
                             className={cn(
                                 "flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all border border-transparent shadow-xs active:scale-95",
-                                activeTab === 'sectors' ? "bg-card text-foreground border-border shadow-sm ring-1 ring-border/5" : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
+                                activeTab === 'channels' ? "bg-card text-foreground border-border shadow-sm ring-1 ring-border/5" : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
                             )}
                         >
-                            Sectors
+                            Channels
                         </button>
                         <button
                             onClick={() => setActiveTab('dms')}
@@ -394,51 +404,46 @@ export default function ChatPage() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto px-3 pb-6 custom-scrollbar">
-                    {activeTab === 'sectors' ? (
-                        <div className="space-y-1">
-                            {channels
-                                .filter(c => c.type !== 'dm')
-                                .map(chan => (
-                                    <ChatListItem
-                                        key={chan.id}
-                                        channel={chan}
-                                        active={activeChannel?.id === chan.id}
+                    {channels
+                        .filter(c => c.type !== 'dm')
+                        .map(chan => (
+                            <ChatListItem
+                                key={chan.id}
+                                channel={chan}
+                                active={activeChannel?.id === chan.id}
+                                onClick={() => {
+                                    setActiveChannel(chan);
+                                    setIsMobileConversationOpen(true);
+                                }}
+                            />
+                        ))}
+                    <div className="space-y-1 mt-1">
+                        <p className="px-3 mb-3 text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2 opacity-60">
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary/50" />
+                            Active Members
+                        </p>
+                        {members
+                            .filter(m => m.id !== currentUser.id)
+                            .map(member => {
+                                const dmChannel = channels.find(c => c.type === 'dm' && c.otherMemberEmail === member.email);
+                                return (
+                                    <MemberItem
+                                        key={member.id}
+                                        member={member}
+                                        active={activeChannel?.type === 'dm' && activeChannel.otherMemberEmail === member.email}
                                         onClick={() => {
-                                            setActiveChannel(chan);
+                                            startDirectMessage(member.id, member.email);
                                             setIsMobileConversationOpen(true);
                                         }}
+                                        lastMessage={dmChannel?.lastMessage}
+                                        lastTime={dmChannel?.lastMessageTime}
+                                        unread={dmChannel?.unreadCount}
                                     />
-                                ))}
-                        </div>
-                    ) : (
-                        <div className="space-y-1 mt-1">
-                            <p className="px-3 mb-3 text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2 opacity-60">
-                                <span className="w-1.5 h-1.5 rounded-full bg-primary/50" />
-                                Active Personnel
-                            </p>
-                            {members
-                                .filter(m => m.id !== currentUser.id)
-                                .map(member => {
-                                    const dmChannel = channels.find(c => c.type === 'dm' && c.otherMemberEmail === member.email);
-                                    return (
-                                        <MemberItem
-                                            key={member.id}
-                                            member={member}
-                                            active={activeChannel?.type === 'dm' && activeChannel.otherMemberEmail === member.email}
-                                            onClick={() => {
-                                                startDirectMessage(member.id, member.email);
-                                                setIsMobileConversationOpen(true);
-                                            }}
-                                            lastMessage={dmChannel?.lastMessage}
-                                            lastTime={dmChannel?.lastMessageTime}
-                                            unread={dmChannel?.unreadCount}
-                                        />
-                                    );
-                                })}
-                        </div>
-                    )}
+                                );
+                            })}
+                    </div>
                     <div className="px-5 py-12 text-center opacity-30">
-                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Scanning for Sectors...</p>
+                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Finding channels...</p>
                     </div>
                 </div>
             </aside>
@@ -482,9 +487,9 @@ export default function ChatPage() {
                                             <RoleBadge role={activeChannel.type === 'dm' ? 'Developer' : 'Manager'} />
                                         </div>
                                     </div>
-                                    <p className="text-[10px] text-emerald-500/70 font-black uppercase tracking-[0.1em] leading-none flex items-center gap-1.5">
+                                    <p className="text-[10px] text-emerald-500/70 font-black uppercase tracking-widest leading-none flex items-center gap-1.5">
                                         <span className="w-1 h-1 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
-                                        Secure Link Active
+                                        Member Online
                                     </p>
                                 </div>
                             </div>
@@ -514,7 +519,7 @@ export default function ChatPage() {
                                 <textarea
                                     ref={textareaRef}
                                     rows={1}
-                                    placeholder={`Transmit to ${activeChannel.name}...`}
+                                    placeholder={`Message ${activeChannel.name}...`}
                                     value={input}
                                     onChange={(e) => {
                                         setInput(e.target.value);
@@ -544,9 +549,9 @@ export default function ChatPage() {
                         <div className="w-24 h-24 rounded-[2.5rem] bg-accent border border-border flex items-center justify-center mb-8 shadow-inner group overflow-hidden">
                             <MessageSquare size={40} className="text-muted-foreground/20 group-hover:text-primary transition-all duration-700 group-hover:scale-110" />
                         </div>
-                        <h3 className="text-lg font-black text-foreground uppercase tracking-[0.3em] mb-2 opacity-80">Secure Portal</h3>
+                        <h3 className="text-lg font-black text-foreground uppercase tracking-[0.3em] mb-2 opacity-80">Messaging</h3>
                         <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em] text-center max-w-xs leading-relaxed opacity-60">
-                            No active communication sector selected. Select a terminal to begin uplink synchronization.
+                            No channel selected. Choose a conversation to start messaging.
                         </p>
                     </div>
                 )}
@@ -562,9 +567,9 @@ function NavIcon({ icon, active = false }: { icon: React.ReactNode; active?: boo
             active ? "bg-card text-primary shadow-md ring-1 ring-border" : "text-muted-foreground hover:text-foreground hover:bg-accent"
         )}>
             {icon}
-            {active && <div className="absolute -left-0 w-1 h-6 bg-primary rounded-r-full shadow-[0_0_8px_rgba(var(--primary-rgb),0.6)]" />}
-            <div className="absolute left-full ml-4 px-3 py-1.5 bg-card text-[10px] font-black text-foreground rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-300 translate-x-[-10px] group-hover:translate-x-0 whitespace-nowrap z-[100] border border-border shadow-2xl uppercase tracking-widest">
-                Unit Control
+            {active && <div className="absolute left-0 w-1 h-6 bg-primary rounded-r-full shadow-[0_0_8px_rgba(var(--primary-rgb),0.6)]" />}
+            <div className="absolute left-full ml-4 px-3 py-1.5 bg-card text-[10px] font-black text-foreground rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-300 translate-x-[-10px] group-hover:translate-x-0 whitespace-nowrap z-100 border border-border shadow-2xl uppercase tracking-widest">
+                Chat Settings
             </div>
         </button>
     );
@@ -712,7 +717,7 @@ function InputTool({ icon }: { icon: React.ReactNode }) {
         <button className="p-3 text-muted-foreground hover:text-primary hover:bg-accent/80 rounded-full transition-all active:scale-90 group relative shadow-inner">
             {icon}
             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-2.5 py-1.5 bg-zinc-900 text-[8px] font-black text-zinc-300 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0 border border-zinc-800 whitespace-nowrap uppercase tracking-widest shadow-2xl backdrop-blur-xl">
-                Emoji Interface
+                Emojis
             </div>
         </button>
     );

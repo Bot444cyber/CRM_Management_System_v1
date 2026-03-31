@@ -104,7 +104,7 @@ export default function PulseView({ projectId }: { projectId: string }) {
                     <div className="lg:w-64 space-y-4">
                         {[
                             { label: 'Total Events', value: events.length, icon: History, color: 'text-primary' },
-                            { label: 'Critical Alerts', value: events.filter(e => e.type === 'CRITICAL').length, icon: AlertCircle, color: 'text-destructive' },
+                            { label: 'High Priority', value: events.filter(e => e.type === 'CRITICAL').length, icon: AlertCircle, color: 'text-destructive' },
                             { label: 'Status', value: 'Healthy', icon: Zap, color: 'text-emerald-500' }
                         ].map(stat => (
                             <div key={stat.label} className="p-4 bg-secondary/30 border border-border/50 rounded-xl shadow-xs transition-transform hover:scale-[1.02]">

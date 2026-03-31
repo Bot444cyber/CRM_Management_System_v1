@@ -77,7 +77,7 @@ export default function SettingsView({ projectId, project, currentUserRole, refr
                 <div className="grid grid-cols-1 gap-8">
                     <div className="space-y-2">
                         <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">
-                            Project Designation
+                            Project Name
                         </label>
                         <input
                             type="text"
@@ -90,7 +90,7 @@ export default function SettingsView({ projectId, project, currentUserRole, refr
 
                     <div className="space-y-2">
                         <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">
-                            Operational Description
+                            Description
                         </label>
                         <textarea
                             value={description}
@@ -104,7 +104,7 @@ export default function SettingsView({ projectId, project, currentUserRole, refr
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div className="space-y-2">
                             <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">
-                                Deployment Status
+                                Status
                             </label>
                             <div className="relative">
                                 <select
@@ -125,7 +125,7 @@ export default function SettingsView({ projectId, project, currentUserRole, refr
 
                         <div className="space-y-2">
                             <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">
-                                Execution Deadline
+                                Deadline
                             </label>
                             <input
                                 type="date"
@@ -144,7 +144,7 @@ export default function SettingsView({ projectId, project, currentUserRole, refr
                         className="bg-foreground hover:opacity-90 text-background px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg hover:-translate-y-px active:translate-y-0 disabled:opacity-50 flex items-center gap-2"
                     >
                         <Save size={14} />
-                        {saving ? 'Processing...' : 'Sync Configuration'}
+                        {saving ? 'Processing...' : 'Save Settings'}
                     </button>
                 </div>
             </div>
@@ -157,9 +157,9 @@ export default function SettingsView({ projectId, project, currentUserRole, refr
                                 <ShieldAlert size={24} />
                             </div>
                             <div className="space-y-1.5 pt-0.5">
-                                <h3 className="text-[11px] font-black text-destructive uppercase tracking-widest">Protocol Breach: Danger Zone</h3>
+                                <h3 className="text-[11px] font-black text-destructive uppercase tracking-widest">Danger Zone</h3>
                                 <p className="text-[11px] text-muted-foreground leading-relaxed font-bold uppercase opacity-80 tracking-tight">
-                                    Deleting this project will permanently remove all associated tasks, milestones, and shared resources from the network. This action is final and irreversible. Proceed with extreme caution.
+                                    Deleting this project will permanently remove all associated tasks, milestones, and shared resources from the system. This action is final and cannot be undone.
                                 </p>
                             </div>
                         </div>
@@ -175,7 +175,7 @@ export default function SettingsView({ projectId, project, currentUserRole, refr
                                         onClick={() => setShowDeleteConfirm(true)}
                                         className="bg-destructive/10 hover:bg-destructive text-destructive hover:text-white px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all border border-destructive/20 shadow-xs"
                                     >
-                                        Terminate Project
+                                        Delete Project
                                     </motion.button>
                                 ) : (
                                     <motion.div
@@ -184,12 +184,12 @@ export default function SettingsView({ projectId, project, currentUserRole, refr
                                         animate={{ opacity: 1, scale: 1 }}
                                         className="flex items-center gap-2 p-2 bg-background border border-destructive/30 rounded-xl shadow-2xl"
                                     >
-                                        <span className="text-[9px] font-black text-destructive uppercase px-3 tracking-widest">Confirm Termination?</span>
+                                        <span className="text-[9px] font-black text-destructive uppercase px-3 tracking-widest">Are you sure?</span>
                                         <button
                                             onClick={handleDelete}
                                             className="bg-destructive hover:bg-destructive/90 text-white px-4 py-2 rounded-lg font-black text-[9px] uppercase tracking-widest transition-all"
                                         >
-                                            YES, DELETE
+                                            Yes, delete project
                                         </button>
                                         <button
                                             onClick={() => setShowDeleteConfirm(false)}

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useRouter, usePathname, useParams } from 'next/navigation';
+import { useRouter, usePathname, useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useSidebar } from '@/context/SidebarContext';
 import {
@@ -41,7 +41,9 @@ import {
     Target,
     Zap,
     Activity as ActivityIcon,
-    Layout as LayoutIcon
+    Layout as LayoutIcon,
+    Kanban,
+    PieChart as PieIcon
 } from 'lucide-react';
 import { useWorkspace } from '@/context/WorkspaceContext';
 import { cn } from '@/lib/utils';
@@ -49,6 +51,7 @@ import { ThemeToggle } from './ThemeToggle';
 import toast from 'react-hot-toast';
 import { AnimatePresence, motion } from 'framer-motion';
 import { apiFetch } from '@/lib/apiFetch';
+import { createPortal } from 'react-dom';
 
 export default function ProjectSidebar() {
     const router = useRouter();
@@ -56,18 +59,43 @@ export default function ProjectSidebar() {
     const params = useParams();
 
     const { isMobileOpen, setIsMobileOpen, isCollapsed, setIsCollapsed } = useSidebar();
+    const searchParams = useSearchParams();
     const [recentProjects, setRecentProjects] = useState<any[]>([]);
     const [activeProject, setActiveProject] = useState<any>(null);
     const [members, setMembers] = useState<any[]>([]);
+    const [currentUser, setCurrentUser] = useState<any>(null);
+    const [milestones, setMilestones] = useState<any[]>([]);
 
     const activeProjectId = params?.id as string;
-    const { activeWorkspace, setActiveWorkspace, workspaces, refreshWorkspaces } = useWorkspace();
+    const { activeWorkspace, setActiveWorkspace, workspaces, refreshWorkspaces, workspaceRole } = useWorkspace();
     const [isWorkspaceListOpen, setIsWorkspaceListOpen] = useState(false);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
     const [newWsName, setNewWsName] = useState("");
     const [joinPassKey, setJoinPassKey] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [dropdownStyles, setDropdownStyles] = useState<React.CSSProperties>({});
+    const triggerRef = React.useRef<HTMLButtonElement>(null);
+
+    const toggleWorkspaceList = () => {
+        if (!isWorkspaceListOpen && triggerRef.current) {
+            const rect = triggerRef.current.getBoundingClientRect();
+            if (isCollapsed) {
+                setDropdownStyles({
+                    top: `${rect.top}px`,
+                    left: `${rect.right + 16}px`,
+                    width: '240px'
+                });
+            } else {
+                setDropdownStyles({
+                    top: `${rect.bottom + 8}px`,
+                    left: `${rect.left}px`,
+                    width: `${rect.width}px`
+                });
+            }
+        }
+        setIsWorkspaceListOpen(!isWorkspaceListOpen);
+    };
 
     const handleCreateWorkspace = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -125,6 +153,24 @@ export default function ProjectSidebar() {
         }
     };
 
+    const fetchUser = async () => {
+        try {
+            const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/me`);
+            if (res.ok) {
+                const data = await res.json();
+                setCurrentUser(data.user);
+            }
+        } catch (e) { console.error(e); }
+    };
+
+    const fetchMilestones = async () => {
+        if (!activeProjectId) return;
+        try {
+            const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pms/${activeProjectId}/milestones`);
+            if (res.ok) setMilestones(await res.json());
+        } catch (e) { console.error(e); }
+    };
+
     const fetchRecent = async () => {
         if (!activeWorkspace) {
             setRecentProjects([]);
@@ -143,6 +189,7 @@ export default function ProjectSidebar() {
 
     useEffect(() => {
         fetchRecent();
+        fetchUser();
     }, [pathname, activeWorkspace]);
 
     useEffect(() => {
@@ -155,16 +202,32 @@ export default function ProjectSidebar() {
             };
             fetchActive();
             fetchMembers();
+            fetchMilestones();
         } else {
             setActiveProject(null);
             setMembers([]);
+            setMilestones([]);
         }
     }, [activeProjectId]);
 
+    const getEffectiveRole = () => {
+        if (!currentUser || !activeProject || !members) return 'user';
+        if (activeProject.workspace?.userId === currentUser.userId || workspaceRole === 'owner' || workspaceRole === 'admin') return 'admin';
+        const member = members.find(m => m.userId === currentUser.userId);
+        return member?.projectRole || 'user';
+    };
+
+    const currentUserRole = getEffectiveRole();
+    const isManager = ['admin', 'manager', 'owner'].includes(currentUserRole);
+
+    const completedMilestones = (milestones || []).filter(m => m.status === 'Completed').length;
+    const totalProgress = (milestones || []).length > 0 ? Math.round(milestones.reduce((a, m) => a + (m.progress || 0), 0) / milestones.length) : 0;
+
     const sidebarContent = (
         <div className={cn(
-            "flex flex-col h-full bg-background/80 backdrop-blur-xl border-r border-border/50 relative z-50 transition-all duration-300 ease-in-out group/sidebar overflow-hidden",
-            isCollapsed && !isMobileOpen ? "w-[68px]" : "w-[260px]"
+            "flex flex-col h-full bg-background/80 backdrop-blur-xl border-r border-border/50 relative transition-all duration-300 ease-in-out group/sidebar overflow-hidden",
+            isCollapsed && !isMobileOpen ? "w-[68px]" : "w-[260px]",
+            isWorkspaceListOpen ? "z-[1000]" : "z-[100]"
         )}>
             {/* Logo Section */}
             <div className="h-14 flex items-center px-4 border-b border-border/50 shrink-0 bg-background/50">
@@ -188,7 +251,7 @@ export default function ProjectSidebar() {
                         href="/projects"
                         active={pathname === '/projects' && !activeProjectId}
                         icon={<Briefcase size={16} />}
-                        label="Portfolio"
+                        label="All Projects"
                         collapsed={isCollapsed}
                         onClick={() => setIsMobileOpen(false)}
                     />
@@ -196,7 +259,7 @@ export default function ProjectSidebar() {
                         href="/projects/analytics"
                         active={pathname === '/projects/analytics'}
                         icon={<ActivityIcon size={16} />}
-                        label="Analytics"
+                        label="Overall Progress"
                         collapsed={isCollapsed}
                         onClick={() => setIsMobileOpen(false)}
                     />
@@ -204,7 +267,7 @@ export default function ProjectSidebar() {
                         href="/projects/workspaces"
                         active={pathname === '/projects/workspaces'}
                         icon={<Globe size={16} />}
-                        label="Global Network"
+                        label="Public Workspaces"
                         collapsed={isCollapsed}
                         onClick={() => setIsMobileOpen(false)}
                     />
@@ -212,7 +275,7 @@ export default function ProjectSidebar() {
                         href="/projects/team"
                         active={pathname === '/projects/team'}
                         icon={<Users size={16} />}
-                        label="Team Management"
+                        label="Manage Team"
                         collapsed={isCollapsed}
                         onClick={() => setIsMobileOpen(false)}
                     />
@@ -228,91 +291,107 @@ export default function ProjectSidebar() {
 
                 {activeProjectId && (
                     <div className="space-y-3 pt-2 animate-in slide-in-from-left duration-300">
-                        <div className="px-3 flex items-center justify-between">
-                            <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Project Context</h4>
-                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
-                        </div>
+                        {!isCollapsed && (
+                            <div className="px-3 flex items-center justify-between">
+                                <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Project Navigation</h4>
+                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
+                            </div>
+                        )}
                         <div className="space-y-1">
                             {[
-                                { id: 'overview', label: 'Control Center', icon: <LayoutIcon size={16} /> },
-                                { id: 'milestones', label: 'Milestone Timeline', icon: <Flag size={16} /> },
-                                { id: 'resources', label: 'Resource Management', icon: <Box size={16} /> },
-                                { id: 'team', label: 'Team Matrix', icon: <Users size={16} /> },
-                                { id: 'pulse', label: 'Activity Analytics', icon: <ActivityIcon size={16} /> },
+                                { id: 'overview', label: 'Summary', icon: <LayoutIcon size={16} /> },
+                                { id: 'milestones', label: 'Full Task List', icon: <Flag size={16} /> },
+                                { id: 'board', label: 'Task Board', icon: <Kanban size={16} /> },
+                                { id: 'analytics', label: 'Progress Charts', icon: <PieIcon size={16} /> },
+                                { id: 'resources', label: 'Team Access', icon: <Box size={16} /> },
+                                { id: 'team', label: 'Member List', icon: <Users size={16} /> },
+                                { id: 'pulse', label: 'Daily Activity', icon: <ActivityIcon size={16} /> },
                                 { id: 'settings', label: 'Project Settings', icon: <Settings size={16} /> },
-                            ].map(tab => {
+                            ].filter(tab => {
+
+                                if (!isManager) return ['milestones', 'board', 'analytics'].includes(tab.id);
+                                if (['board', 'analytics'].includes(tab.id)) return true;
+                                if (tab.id === 'settings') return currentUserRole === 'admin';
+                                return true;
+                            }).map(tab => {
                                 const currentTab = (params?.tab as string) || 'overview';
-                                const isActive = pathname.includes(`/projects/${activeProjectId}`) && currentTab === tab.id;
+                                const currentView = searchParams.get('view') || (isManager ? 'list' : 'board');
+
+                                const isTabMatch = tab.id === 'milestones' || tab.id === 'board' || tab.id === 'analytics'
+                                    ? currentTab === 'milestones'
+                                    : currentTab === tab.id;
+
+                                const isViewMatch = (tab.id === 'milestones' && currentView === 'list') ||
+                                    (tab.id === 'board' && currentView === 'board') ||
+                                    (tab.id === 'analytics' && currentView === 'analytics');
+
+                                const isActive = pathname.includes(`/projects/${activeProjectId}`) && isTabMatch && (isManager ? (tab.id === 'milestones' ? currentView === 'list' : isViewMatch) : isViewMatch);
+
+                                const href = tab.id === 'board' ? `/projects/${activeProjectId}?tab=milestones&view=board` :
+                                    tab.id === 'analytics' ? `/projects/${activeProjectId}?tab=milestones&view=analytics` :
+                                        tab.id === 'milestones' && !isManager ? `/projects/${activeProjectId}?tab=milestones&view=list` :
+                                            `/projects/${activeProjectId}?tab=${tab.id}`;
+
                                 return (
-                                    <NavItem
-                                        key={tab.id}
-                                        href={`/projects/${activeProjectId}?tab=${tab.id}`}
-                                        active={isActive}
-                                        icon={tab.icon}
-                                        label={tab.label}
-                                        collapsed={isCollapsed}
-                                        onClick={() => setIsMobileOpen(false)}
-                                    />
+                                    <div key={tab.id}>
+                                        <NavItem
+                                            href={href}
+                                            active={isActive}
+                                            icon={tab.icon}
+                                            label={tab.label}
+                                            collapsed={isCollapsed}
+                                            onClick={() => setIsMobileOpen(false)}
+                                        />
+                                    </div>
                                 );
                             })}
                         </div>
                     </div>
                 )}
 
-                {!isCollapsed && (
-                    <div className="space-y-3">
+                <div className="space-y-3">
+                    {!isCollapsed && (
                         <div className="px-3 flex items-center justify-between">
-                            <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] opacity-40">Active Sector</h4>
+                            <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] opacity-40">Choose Workspace</h4>
                             <button onClick={() => setIsCreateModalOpen(true)} className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all border border-transparent hover:border-primary/20 shadow-sm" title="New Workspace">
                                 <Plus size={14} />
                             </button>
                         </div>
-                        <div className="px-2 relative">
-                            {activeWorkspace ? (
-                                <button onClick={() => setIsWorkspaceListOpen(!isWorkspaceListOpen)} className={cn("w-full flex items-center gap-3 p-2 rounded-xl transition-all text-left group/ws", isWorkspaceListOpen ? "bg-secondary border-primary/20 shadow-lg shadow-primary/5" : "bg-card/40 border border-border/50 hover:border-primary/30 hover:bg-secondary/80")}>
-                                    <div className="w-9 h-9 rounded-xl bg-background border border-border flex items-center justify-center text-muted-foreground group-hover/ws:text-primary group-hover/ws:scale-110 transition-all shadow-xs">
-                                        <Building2 size={18} />
-                                    </div>
-                                    <div className="min-w-0 flex-1">
-                                        <p className="text-[11px] font-black text-foreground truncate uppercase tracking-tight">{activeWorkspace.name}</p>
-                                        <p className="text-[9px] text-muted-foreground font-black truncate uppercase tracking-widest opacity-40">{activeWorkspace.passKey || 'Standard'}</p>
-                                    </div>
-                                    <div className={cn("transition-transform duration-300 text-muted-foreground/30", isWorkspaceListOpen && "rotate-180")}>
-                                        <ChevronDown size={14} />
-                                    </div>
-                                </button>
-                            ) : (
-                                <button onClick={() => setIsWorkspaceListOpen(!isWorkspaceListOpen)} className="w-full p-4 rounded-xl border border-dashed border-border/50 text-center hover:bg-secondary/50 transition-all">
-                                    <p className="text-[9px] text-muted-foreground font-black uppercase tracking-[0.3em]">No Selection</p>
-                                </button>
-                            )}
-
-                            <AnimatePresence>
-                                {isWorkspaceListOpen && (
-                                    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute top-full left-2 right-2 mt-2 bg-card/95 backdrop-blur-xl border border-border rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] z-100 overflow-hidden max-h-[300px] overflow-y-auto custom-scrollbar">
-                                        <div className="p-2 space-y-1">
-                                            {workspaces && workspaces.length > 0 ? (
-                                                workspaces.map(ws => (
-                                                    <button key={ws.id} onClick={() => { if (setActiveWorkspace) setActiveWorkspace(ws); setIsWorkspaceListOpen(false); }} className={cn("w-full flex items-center gap-3 p-2.5 rounded-lg transition-all text-left border border-transparent", activeWorkspace?.id === ws.id ? "bg-primary/10 text-primary border-primary/20" : "hover:bg-secondary text-muted-foreground hover:text-foreground")}>
-                                                        <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-black shadow-sm", activeWorkspace?.id === ws.id ? "bg-primary text-primary-foreground" : "bg-secondary")}>
-                                                            {ws.name?.[0]?.toUpperCase() || "W"}
-                                                        </div>
-                                                        <span className="text-[11px] font-black uppercase tracking-tight truncate flex-1">{ws.name}</span>
-                                                        {activeWorkspace?.id === ws.id && <CheckCircle2 size={14} className="text-primary" />}
-                                                    </button>
-                                                ))
-                                            ) : (
-                                                <div className="p-6 text-center">
-                                                    <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest opacity-40">No accessible nodes</p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </motion.div>
+                    )}
+                    <div className="px-2 relative">
+                        {activeWorkspace ? (
+                            <button
+                                ref={triggerRef}
+                                onClick={toggleWorkspaceList}
+                                className={cn(
+                                    "w-full flex items-center gap-3 p-2 rounded-xl transition-all text-left group/ws",
+                                    isWorkspaceListOpen ? "bg-secondary border-primary/20 shadow-lg shadow-primary/5" : "bg-card/40 border border-border/50 hover:border-primary/30 hover:bg-secondary/80"
                                 )}
-                            </AnimatePresence>
-                        </div>
+                            >
+                                <div className="w-9 h-9 rounded-xl bg-background border border-border flex items-center justify-center text-muted-foreground group-hover/ws:text-primary group-hover/ws:scale-110 transition-all shadow-xs">
+                                    <Building2 size={18} />
+                                </div>
+                                {!isCollapsed && (
+                                    <>
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-[11px] font-black text-foreground truncate uppercase tracking-tight">{activeWorkspace.name}</p>
+                                            <p className="text-[9px] text-muted-foreground font-black truncate uppercase tracking-widest opacity-40">{activeWorkspace.passKey || 'Standard'}</p>
+                                        </div>
+                                        <div className={cn("transition-transform duration-300 text-muted-foreground/30", isWorkspaceListOpen && "rotate-180")}>
+                                            <ChevronDown size={14} />
+                                        </div>
+                                    </>
+                                )}
+                            </button>
+                        ) : (
+                            <button onClick={() => setIsWorkspaceListOpen(!isWorkspaceListOpen)} className="w-full p-4 rounded-xl border border-dashed border-border/50 text-center hover:bg-secondary/50 transition-all">
+                                <p className="text-[9px] text-muted-foreground font-black uppercase tracking-[0.3em]">{!isCollapsed ? 'No Selection' : 'N/A'}</p>
+                            </button>
+                        )}
+
+                        <div className="hidden" />
                     </div>
-                )}
+                </div>
 
                 {!isCollapsed && recentProjects.length > 0 && (
                     <div className="space-y-3">
@@ -422,8 +501,8 @@ export default function ProjectSidebar() {
                                         <Plus size={20} />
                                     </div>
                                     <div>
-                                        <h3 className="text-sm font-bold text-foreground uppercase tracking-widest">New Workspace</h3>
-                                        <p className="text-[10px] text-muted-foreground font-medium">Create a new tactical environment</p>
+                                        <h3 className="text-sm font-bold text-foreground uppercase tracking-widest">Create Workspace</h3>
+                                        <p className="text-[10px] text-muted-foreground font-medium">Start a new project area</p>
                                     </div>
                                 </div>
                                 <button onClick={() => setIsCreateModalOpen(false)} className="text-muted-foreground hover:text-foreground transition-colors">
@@ -437,7 +516,7 @@ export default function ProjectSidebar() {
                                 </div>
                                 <button disabled={isSubmitting || !newWsName.trim()} className="w-full bg-primary hover:opacity-90 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2">
                                     {isSubmitting ? <RefreshCw size={16} className="animate-spin" /> : <Plus size={16} />}
-                                    <span>Establish Node</span>
+                                    <span>Create Workspace</span>
                                 </button>
                             </form>
                         </motion.div>
@@ -457,7 +536,7 @@ export default function ProjectSidebar() {
                                     </div>
                                     <div>
                                         <h3 className="text-sm font-bold text-foreground uppercase tracking-widest">Join Workspace</h3>
-                                        <p className="text-[10px] text-muted-foreground font-medium">Link with an existing node</p>
+                                        <p className="text-[10px] text-muted-foreground font-medium">Join an existing workspace</p>
                                     </div>
                                 </div>
                                 <button onClick={() => setIsJoinModalOpen(false)} className="text-muted-foreground hover:text-foreground transition-colors">
@@ -466,22 +545,58 @@ export default function ProjectSidebar() {
                             </div>
                             <form onSubmit={handleJoinWorkspace} className="p-6 space-y-4">
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Tactical PassKey</label>
-                                    <input type="text" value={joinPassKey} onChange={(e) => setJoinPassKey(e.target.value.toUpperCase())} placeholder="Enter 6-digit key" maxLength={6} className="w-full bg-background border border-border rounded-xl px-4 py-4 text-center text-2xl font-mono font-bold tracking-[0.5em] text-emerald-400 placeholder:text-muted-foreground/20 focus:outline-none focus:border-emerald-500/50 transition-all uppercase" autoFocus />
-                                    <p className="text-[10px] text-muted-foreground text-center font-medium italic">Identification required for encrypted uplink</p>
+                                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Access Key</label>
+                                    <input type="text" value={joinPassKey} onChange={(e) => setJoinPassKey(e.target.value.toUpperCase())} placeholder="Enter Code" maxLength={6} className="w-full bg-background border border-border rounded-xl px-4 py-4 text-center text-2xl font-mono font-bold tracking-[0.5em] text-emerald-400 placeholder:text-muted-foreground/20 focus:outline-none focus:border-emerald-500/50 transition-all uppercase" autoFocus />
+                                    <p className="text-[10px] text-muted-foreground text-center font-medium italic">Enter the 6-digit code to join.</p>
                                 </div>
                                 <button disabled={isSubmitting || joinPassKey.length !== 6} className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-emerald-900/20 flex items-center justify-center gap-2">
                                     {isSubmitting ? <RefreshCw size={16} className="animate-spin" /> : <Zap size={16} />}
-                                    <span>Establish Connection</span>
+                                    <span>Join Workspace</span>
                                 </button>
                             </form>
                         </motion.div>
                     </div>
                 )}
             </AnimatePresence>
+
+            {typeof document !== 'undefined' && createPortal(
+                <AnimatePresence>
+                    {isWorkspaceListOpen && (
+                        <>
+                            <div className="fixed inset-0 z-[1090]" onClick={() => setIsWorkspaceListOpen(false)} />
+                            <motion.div
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -20 }}
+                                style={dropdownStyles}
+                                className="fixed bg-card/95 backdrop-blur-xl border border-border rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-[1100] overflow-hidden max-h-[400px] overflow-y-auto custom-scrollbar"
+                            >
+                                <div className="p-2 space-y-1">
+                                    {workspaces && workspaces.length > 0 ? (
+                                        workspaces.map(ws => (
+                                            <button key={ws.id} onClick={() => { if (setActiveWorkspace) setActiveWorkspace(ws); setIsWorkspaceListOpen(false); }} className={cn("w-full flex items-center gap-3 p-2.5 rounded-lg transition-all text-left border border-transparent", activeWorkspace?.id === ws.id ? "bg-primary/10 text-primary border-primary/20" : "hover:bg-secondary text-muted-foreground hover:text-foreground")}>
+                                                <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-black shadow-sm", activeWorkspace?.id === ws.id ? "bg-primary text-primary-foreground" : "bg-secondary")}>
+                                                    {ws.name?.[0]?.toUpperCase() || "W"}
+                                                </div>
+                                                <span className="text-[11px] font-black uppercase tracking-tight truncate flex-1">{ws.name}</span>
+                                                {activeWorkspace?.id === ws.id && <CheckCircle2 size={14} className="text-primary" />}
+                                            </button>
+                                        ))
+                                    ) : (
+                                        <div className="p-6 text-center">
+                                            <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest opacity-40">No accessible nodes</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </motion.div>
+                        </>
+                    )}
+                </AnimatePresence>,
+                document.body
+            )}
         </>
     );
-}
+};
 
 const NavItem = ({ icon, label, active = false, href, collapsed = false, onClick }: { icon: React.ReactNode, label: string, active?: boolean, href: string, collapsed?: boolean, onClick?: () => void }) => {
     return (

@@ -88,7 +88,7 @@ export default function ResourceView({ projectId, requests, currentUserRole = 'u
                                                     </div>
                                                     <div className="flex flex-col gap-0.5">
                                                         <span className="text-sm font-black text-foreground uppercase tracking-tight">{r.subProductName}</span>
-                                                        <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40">NODE ID: {r.id.split('-')[0]}</span>
+                                                        <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40">ID: {r.id.split('-')[0]}</span>
                                                     </div>
                                                 </div>
                                             </td>
@@ -104,7 +104,7 @@ export default function ResourceView({ projectId, requests, currentUserRole = 'u
                                                         {r.requestedByUserId.toString().slice(0, 2)}
                                                     </div>
                                                     <div className="flex flex-col">
-                                                        <span className="text-[11px] font-black text-foreground uppercase tracking-tight">Agent #{r.requestedByUserId}</span>
+                                                        <span className="text-[11px] font-black text-foreground uppercase tracking-tight">User #{r.requestedByUserId}</span>
                                                         <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40">System Role</span>
                                                     </div>
                                                 </div>
@@ -143,7 +143,7 @@ export default function ResourceView({ projectId, requests, currentUserRole = 'u
                                                             </button>
                                                         </div>
                                                     ) : (
-                                                        <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40 italic">Awaiting Uplink</span>
+                                                        <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40 italic">Pending Approval</span>
                                                     )
                                                 ) : (
                                                     <div className="flex items-center justify-end gap-2 text-muted-foreground font-black text-[10px] uppercase tracking-widest opacity-60">
@@ -166,9 +166,9 @@ export default function ResourceView({ projectId, requests, currentUserRole = 'u
                     <Info size={16} />
                 </div>
                 <div className="space-y-1.5 pt-0.5">
-                    <h4 className="text-[11px] font-black text-foreground uppercase tracking-widest">Resource Allocation Protocol</h4>
+                    <h4 className="text-[11px] font-black text-foreground uppercase tracking-widest">Resource Management</h4>
                     <p className="text-[11px] text-muted-foreground leading-relaxed font-bold opacity-80 uppercase tracking-tight">
-                        Approved requests automatically update the project inventory and are recorded in the central ledger. Inventory changes are irreversible once confirmed by a commanding node. All transactions are encrypted and audited.
+                        Approved requests update the project inventory. Once approved by an administrator, changes are final.
                     </p>
                 </div>
             </div>

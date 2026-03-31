@@ -164,6 +164,12 @@ export const projectMilestones = mysqlTable("project_milestones", {
     status: varchar("status", { length: 50 }).default("Pending"), // Pending, In Progress, Completed
     dueDate: timestamp("due_date"),
     progress: int("progress").default(0), // 0 to 100
+    assignedTo: int("assigned_to"), // User ID from users table
+    priority: varchar("priority", { length: 50 }).default("Medium"), // Low, Medium, High
+    tags: json("tags").$type<string[]>().default([]),
+    estimatedHours: int("estimated_hours").default(0),
+    actualHours: int("actual_hours").default(0),
+    checklists: json("checklists").$type<{ id: string; text: string; completed: boolean }[]>().default([]),
     createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
 

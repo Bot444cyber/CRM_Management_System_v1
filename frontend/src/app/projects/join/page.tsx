@@ -31,7 +31,7 @@ export default function JoinProjectPage() {
 
             if (res.ok) {
                 const data = await res.json();
-                toast.success('Initiative Joined');
+                toast.success('Project Joined');
                 router.push(`/projects/${data.projectId}`);
             } else {
                 const errData = await res.json().catch(() => ({}));
@@ -64,7 +64,7 @@ export default function JoinProjectPage() {
                             <UserPlus size={16} className="text-primary" />
                         </div>
                         <h1 className="text-sm font-black tracking-tight text-foreground uppercase leading-none">
-                            Join Initiative
+                            Join Project
                         </h1>
                     </div>
                 </div>
@@ -92,19 +92,19 @@ export default function JoinProjectPage() {
                         <div className="p-2 bg-primary/10 rounded-lg text-primary">
                             <Shield size={18} />
                         </div>
-                        <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-40">Security Authorization</h2>
+                        <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-40">Project Access</h2>
                     </div>
 
                     <div className="text-center mb-12">
-                        <h1 className="text-3xl font-black tracking-tighter mb-3 uppercase leading-none text-foreground">Access Protocol</h1>
+                        <h1 className="text-3xl font-black tracking-tighter mb-3 uppercase leading-none text-foreground">Join Project</h1>
                         <p className="text-[10px] font-bold text-muted-foreground/60 leading-relaxed uppercase tracking-widest max-w-[200px] mx-auto">
-                            Input a unique invitation signature to establish secure access.
+                            Enter your invite code to join this project.
                         </p>
                     </div>
 
                     <form onSubmit={handleJoin} className="space-y-10">
                         <div className="space-y-3">
-                            <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 ml-4">Deployment Code</label>
+                            <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 ml-4">Invite Code</label>
                             <div className="relative group/input">
                                 <input
                                     type="text"
@@ -140,12 +140,12 @@ export default function JoinProjectPage() {
                                 {loading ? (
                                     <>
                                         <Loader2 size={20} className="animate-spin" />
-                                        SYNCHRONIZING...
+                                        JOINING...
                                     </>
                                 ) : (
                                     <>
                                         <Zap size={20} className="group-hover:rotate-12 transition-transform" />
-                                        AUTHORIZE NODE
+                                        JOIN PROJECT
                                     </>
                                 )}
                             </button>
