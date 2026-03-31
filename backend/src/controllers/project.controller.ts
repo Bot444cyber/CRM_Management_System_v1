@@ -358,7 +358,7 @@ export const getProjects = async (req: Request, res: Response): Promise<void> =>
         }
 
         let projectRows;
-        if (membership[0].role === 'owner' || membership[0].role === 'admin') {
+        if (membership[0].role === 'owner' || membership[0].role === 'admin' || membership[0].role === 'manager') {
             // Only workspace owner and admin can see all projects in the workspace
             projectRows = await db.select().from(projects).where(eq(projects.workspaceId, workspaceId as string));
         } else {
@@ -471,7 +471,23 @@ export const getProjectDashboardData = async (req: Request, res: Response): Prom
         // Fetch everything in parallel via one DB connection pool session
         const [projectRows, mRows, rRows, remRows, pulseRows, memRows] = await Promise.all([
             db.select().from(projects).where(eq(projects.id, id as string)).limit(1),
-            db.select().from(projectMilestones).where(eq(projectMilestones.projectId, id as string)),
+            db.select({
+                id: projectMilestones.id,
+                name: projectMilestones.name,
+                description: projectMilestones.description,
+                status: projectMilestones.status,
+                dueDate: projectMilestones.dueDate,
+                progress: projectMilestones.progress,
+                assignedTo: projectMilestones.assignedTo,
+                priority: projectMilestones.priority,
+                tags: projectMilestones.tags,
+                estimatedHours: projectMilestones.estimatedHours,
+                actualHours: projectMilestones.actualHours,
+                assigneeName: users.name,
+                assigneeEmail: users.email
+            }).from(projectMilestones)
+                .leftJoin(users, eq(projectMilestones.assignedTo, users.id))
+                .where(eq(projectMilestones.projectId, id as string)),
             db.select().from(resourceRequests).where(eq(resourceRequests.projectId, id as string)),
             db.select().from(projectReminders).where(eq(projectReminders.projectId, id as string)),
             db.select().from(projectPulse).where(eq(projectPulse.projectId, id as string)).orderBy(desc(projectPulse.time)).limit(20),
@@ -536,7 +552,7 @@ export const getProject = async (req: Request, res: Response): Promise<void> => 
             .limit(1);
 
         const isWorkspacePrivileged = workspaceMembership.length > 0 &&
-            (workspaceMembership[0].role === 'owner' || workspaceMembership[0].role === 'admin');
+            (workspaceMembership[0].role === 'owner' || workspaceMembership[0].role === 'admin' || workspaceMembership[0].role === 'manager');
 
         const { projectMembers } = await import("../db/schema");
         const projectMembership = await db.select().from(projectMembers)
@@ -588,7 +604,23 @@ export const getProject = async (req: Request, res: Response): Promise<void> => 
         // Fetch everything for sidebar context in parallel
         const { projectMilestones, users: schemaUsers } = await import("../db/schema");
         const [mRows, memRows] = await Promise.all([
-            db.select().from(projectMilestones).where(eq(projectMilestones.projectId, id as string)),
+            db.select({
+                id: projectMilestones.id,
+                name: projectMilestones.name,
+                description: projectMilestones.description,
+                status: projectMilestones.status,
+                dueDate: projectMilestones.dueDate,
+                progress: projectMilestones.progress,
+                assignedTo: projectMilestones.assignedTo,
+                priority: projectMilestones.priority,
+                tags: projectMilestones.tags,
+                estimatedHours: projectMilestones.estimatedHours,
+                actualHours: projectMilestones.actualHours,
+                assigneeName: schemaUsers.name,
+                assigneeEmail: schemaUsers.email
+            }).from(projectMilestones)
+                .leftJoin(schemaUsers, eq(projectMilestones.assignedTo, schemaUsers.id))
+                .where(eq(projectMilestones.projectId, id as string)),
             db.select({
                 userId: projectMembers.userId,
                 projectRole: projectMembers.role,

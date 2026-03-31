@@ -117,3 +117,27 @@ export const updateProjectMilestone = async (req: Request, res: Response): Promi
         res.status(500).json({ message: "Server error" });
     }
 };
+
+export const deleteProjectMilestone = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id, milestoneId } = req.params;
+        const userId = req.user?.userId;
+
+        if (!userId) {
+            res.status(401).json({ message: "Unauthorized" });
+            return;
+        }
+
+        if (!(await hasManagerialAccess(id as string, userId))) {
+            res.status(403).json({ message: "Forbidden: Management rights required" });
+            return;
+        }
+
+        await db.delete(projectMilestones).where(eq(projectMilestones.id, milestoneId as string));
+
+        res.status(200).json({ message: "Milestone deleted successfully" });
+    } catch (error) {
+        console.error("Error deleting milestone:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+};

@@ -13,5 +13,5 @@ const poolConnection = mysql.createPool({
     keepAliveInitialDelay: 10000,
 });
 
-export const db = drizzle(poolConnection, { logger: true });
+export const db = drizzle(poolConnection);
 export { poolConnection };

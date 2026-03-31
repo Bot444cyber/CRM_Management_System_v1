@@ -2,7 +2,7 @@ import express from "express";
 import { getWorkspaces, createWorkspace, joinWorkspace, getWorkspace, updateWorkspace, deleteWorkspace, getProjects, createProject, getProject, getProjectDashboardData, updateProject, deleteProject, getWorkspaceMembers, updateWorkspaceMember, removeWorkspaceMember, inviteToWorkspace } from "../controllers/project.controller";
 
 import { reserveInventory, getResourceRequests, createResourceRequest, processResourceRequest } from "../controllers/resource.controller";
-import { getProjectMilestones, createProjectMilestone, updateProjectMilestone } from "../controllers/milestone.controller";
+import { getProjectMilestones, createProjectMilestone, updateProjectMilestone, deleteProjectMilestone } from "../controllers/milestone.controller";
 import { getProjectMembers, addProjectMember, removeProjectMember, getProjectInvitation, resetInviteStrings, joinByCode, joinByLink, requestToJoin, getJoinRequests, processJoinRequest, getGlobalTeam } from "../controllers/team.controller";
 import { searchUsers } from "../controllers/user.controller";
 import { getProjectPulse, createPulseEvent } from "../controllers/pulse.controller";
@@ -53,6 +53,7 @@ router.put("/:id/resource-requests/:requestId/approve", authorizeRoles("admin", 
 router.get("/:id/milestones", getProjectMilestones);                               // All roles view
 router.post("/:id/milestones", authorizeRoles("admin", "manager", "team_leader", "user"), createProjectMilestone);  // TL+ create
 router.put("/:id/milestones/:milestoneId", authorizeRoles("admin", "manager", "team_leader", "developer", "designer", "user"), updateProjectMilestone); // TL+ update
+router.delete("/:id/milestones/:milestoneId", authorizeRoles("admin", "manager"), deleteProjectMilestone); // Manager only delete
 
 // ── Team Management ──────────────────────────────────────────────────────────
 router.get("/:id/members", getProjectMembers);                                      // All roles can view team

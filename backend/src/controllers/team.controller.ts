@@ -20,7 +20,7 @@ export const hasManagerialAccess = async (projectId: string, userId: number): Pr
             .where(and(
                 eq(workspaceMembers.workspaceId, project[0].workspaceId),
                 eq(workspaceMembers.userId, userId),
-                or(eq(workspaceMembers.role, 'owner'), eq(workspaceMembers.role, 'admin'))
+                or(eq(workspaceMembers.role, 'owner'), eq(workspaceMembers.role, 'admin'), eq(workspaceMembers.role, 'manager'))
             ))
             .limit(1);
 

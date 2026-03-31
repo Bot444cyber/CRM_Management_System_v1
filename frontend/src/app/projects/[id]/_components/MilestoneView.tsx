@@ -84,6 +84,7 @@ export default function MilestoneView({ projectId, milestones = [], members = []
     const canManage = ['owner', 'manager', 'admin'].includes(currentUserRole);
 
     const [isCreating, setIsCreating] = useState(false);
+    const [editingTask, setEditingTask] = useState<Milestone | null>(null);
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [dueDate, setDueDate] = useState('');
@@ -100,27 +101,62 @@ export default function MilestoneView({ projectId, milestones = [], members = []
         if (initialViewMode) setViewMode(initialViewMode);
     }, [initialViewMode]);
 
+    const handleEdit = (task: Milestone) => {
+        setEditingTask(task);
+        setName(task.name);
+        setDescription(task.description || '');
+        setDueDate(task.dueDate ? task.dueDate.split('T')[0] : '');
+        setAssignedTo(task.assignedTo?.toString() || '');
+        setPriority(task.priority);
+        setTagsInput(Array.isArray(task.tags) ? task.tags.join(', ') : '');
+        setEstimatedHours(task.estimatedHours?.toString() || '0');
+        setIsCreating(true);
+    };
+
     const handleCreate = async () => {
         if (!name) return;
         const tags = tagsInput.split(',').map(tag => tag.trim()).filter(Boolean);
-        const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pms/${projectId}/milestones`, {
-            method: 'POST',
-            body: JSON.stringify({
-                name, description, dueDate,
-                assignedTo: assignedTo ? parseInt(assignedTo) : null,
-                priority,
-                tags,
-                estimatedHours: parseInt(estimatedHours) || 0
-            })
+        const payload = {
+            name, description, dueDate,
+            assignedTo: assignedTo ? parseInt(assignedTo) : null,
+            priority,
+            tags,
+            estimatedHours: parseInt(estimatedHours) || 0
+        };
+
+        const url = editingTask
+            ? `${process.env.NEXT_PUBLIC_API_URL}/api/pms/${projectId}/milestones/${editingTask.id}`
+            : `${process.env.NEXT_PUBLIC_API_URL}/api/pms/${projectId}/milestones`;
+
+        const res = await apiFetch(url, {
+            method: editingTask ? 'PUT' : 'POST',
+            body: JSON.stringify(payload)
         });
+
         if (res.ok) {
-            toast.success('Task assigned successfully');
-            setIsCreating(false); setName(''); setDescription(''); setDueDate(''); setAssignedTo(''); setPriority('Medium');
+            toast.success(editingTask ? 'Task updated' : 'Task assigned successfully');
+            setIsCreating(false);
+            setEditingTask(null);
+            setName(''); setDescription(''); setDueDate(''); setAssignedTo(''); setPriority('Medium');
             setTagsInput(''); setEstimatedHours('0');
             triggerRefresh();
             refresh();
         } else {
-            toast.error('Failed to create task');
+            toast.error(editingTask ? 'Failed to update task' : 'Failed to create task');
+        }
+    };
+
+    const handleDelete = async (milestoneId: string) => {
+        if (!confirm('Are you sure you want to delete this task?')) return;
+        const res = await apiFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pms/${projectId}/milestones/${milestoneId}`, {
+            method: 'DELETE'
+        });
+        if (res.ok) {
+            toast.success('Task deleted');
+            triggerRefresh();
+            refresh();
+        } else {
+            toast.error('Failed to delete task');
         }
     };
 
@@ -240,7 +276,10 @@ export default function MilestoneView({ projectId, milestones = [], members = []
 
                     {canManage && (
                         <button
-                            onClick={() => setIsCreating(!isCreating)}
+                            onClick={() => {
+                                setIsCreating(!isCreating);
+                                if (!isCreating) setEditingTask(null);
+                            }}
                             className="flex items-center gap-2 bg-primary hover:opacity-90 text-primary-foreground px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-xl shadow-primary/20"
                         >
                             <Plus size={16} /> Add New Task
@@ -268,6 +307,20 @@ export default function MilestoneView({ projectId, milestones = [], members = []
                         className="bg-card/40 backdrop-blur-md border border-primary/20 p-8 rounded-[2rem] shadow-2xl relative overflow-hidden"
                     >
                         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl pointer-events-none" />
+
+                        <div className="flex items-center gap-4 mb-8">
+                            <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary shadow-inner">
+                                {editingTask ? <Sparkles size={24} /> : <Target size={24} />}
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-black uppercase tracking-tight italic">
+                                    {editingTask ? 'Modify Objective' : 'New Strategic Task'}
+                                </h3>
+                                <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest opacity-60">
+                                    {editingTask ? `Updating: ${editingTask.name}` : 'Initialize a new project milestone'}
+                                </p>
+                            </div>
+                        </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
                             <div className="space-y-2 md:col-span-2 lg:col-span-1">
                                 <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Objective / Short Title</label>
@@ -358,8 +411,10 @@ export default function MilestoneView({ projectId, milestones = [], members = []
                             </div>
                         </div>
                         <div className="flex items-center justify-end gap-3 mt-8 pt-6 border-t border-border/50">
-                            <button onClick={() => setIsCreating(false)} className="px-6 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-foreground transition-all">Cancel</button>
-                            <button onClick={handleCreate} className="px-8 py-3 bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20 hover:scale-105 transition-all">Create Task</button>
+                            <button onClick={() => { setIsCreating(false); setEditingTask(null); }} className="px-6 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-foreground transition-all">Cancel</button>
+                            <button onClick={handleCreate} className="px-8 py-3 bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20 hover:scale-105 transition-all">
+                                {editingTask ? 'Update Task' : 'Create Task'}
+                            </button>
                         </div>
                     </motion.div>
                 )}
@@ -383,6 +438,8 @@ export default function MilestoneView({ projectId, milestones = [], members = []
                                     canManage={canManage}
                                     isMyTask={m.assignedTo === currentUser?.userId}
                                     onUpdate={(updates) => updateTask(m.id, updates)}
+                                    onEdit={() => handleEdit(m)}
+                                    onDelete={() => handleDelete(m.id)}
                                 />
                             ))
                         )}
@@ -428,7 +485,10 @@ export default function MilestoneView({ projectId, milestones = [], members = []
                                                                 >
                                                                     <TaskCard
                                                                         task={m}
+                                                                        canManage={canManage}
                                                                         onUpdate={(updates) => updateTask(m.id, updates)}
+                                                                        onEdit={() => handleEdit(m)}
+                                                                        onDelete={() => handleDelete(m.id)}
                                                                     />
                                                                 </div>
                                                             )}
@@ -633,7 +693,15 @@ function StatCard({ label, value, icon: Icon, color, sub }: { label: string; val
     );
 }
 
-function TaskListItem({ task, idx, canManage, isMyTask, onUpdate }: { task: Milestone; idx: number; canManage: boolean; isMyTask: boolean; onUpdate: (updates: Partial<Milestone>) => void }) {
+function TaskListItem({ task, idx, canManage, isMyTask, onUpdate, onEdit, onDelete }: {
+    task: Milestone;
+    idx: number;
+    canManage: boolean;
+    isMyTask: boolean;
+    onUpdate: (updates: Partial<Milestone>) => void;
+    onEdit: () => void;
+    onDelete: () => void;
+}) {
     const isCompleted = task.status === 'Completed';
     const urgency = getDueDateUrgency(task.dueDate, task.status);
 
@@ -719,8 +787,14 @@ function TaskListItem({ task, idx, canManage, isMyTask, onUpdate }: { task: Mile
 
                         {(canManage || isMyTask) && !isCompleted && (
                             <div className="flex items-center gap-2">
-                                <button onClick={() => onUpdate({ status: 'In Progress' })} className="p-2.5 rounded-xl border border-border bg-card text-muted-foreground hover:text-primary hover:border-primary/30 transition-all shadow-xs"><Activity size={14} /></button>
-                                <button onClick={() => onUpdate({ status: 'Completed', progress: 100 })} className="p-2.5 rounded-xl border border-border bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all shadow-xs"><Check size={14} /></button>
+                                <button onClick={() => onUpdate({ status: 'In Progress' })} className="p-2.5 rounded-xl border border-border bg-card text-muted-foreground hover:text-primary hover:border-primary/30 transition-all shadow-xs" title="Start Progress"><Activity size={14} /></button>
+                                <button onClick={() => onUpdate({ status: 'Completed', progress: 100 })} className="p-2.5 rounded-xl border border-border bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all shadow-xs" title="Complete Task"><Check size={14} /></button>
+                                {canManage && (
+                                    <>
+                                        <button onClick={onEdit} className="p-2.5 rounded-xl border border-border bg-card text-muted-foreground hover:text-amber-500 hover:border-amber-500/30 transition-all shadow-xs" title="Edit Task"><Sparkles size={14} /></button>
+                                        <button onClick={onDelete} className="p-2.5 rounded-xl border border-border bg-card text-muted-foreground hover:text-rose-500 hover:border-rose-500/30 transition-all shadow-xs" title="Delete Task"><Filter size={14} className="rotate-45" /></button>
+                                    </>
+                                )}
                             </div>
                         )}
                     </div>
@@ -778,7 +852,13 @@ function TaskListItem({ task, idx, canManage, isMyTask, onUpdate }: { task: Mile
     );
 }
 
-function TaskCard({ task, onUpdate }: { task: Milestone; onUpdate: (updates: Partial<Milestone>) => void }) {
+function TaskCard({ task, canManage, onUpdate, onEdit, onDelete }: {
+    task: Milestone;
+    canManage: boolean;
+    onUpdate: (updates: Partial<Milestone>) => void;
+    onEdit: () => void;
+    onDelete: () => void;
+}) {
     const urgency = getDueDateUrgency(task.dueDate, task.status);
 
     return (
@@ -796,6 +876,12 @@ function TaskCard({ task, onUpdate }: { task: Milestone; onUpdate: (updates: Par
                         </span>
                     )}
                 </div>
+                {canManage && (
+                    <div className="flex items-center gap-1">
+                        <button onClick={onEdit} className="p-1.5 rounded-lg hover:bg-amber-500/10 text-muted-foreground hover:text-amber-500 transition-all"><Sparkles size={12} /></button>
+                        <button onClick={onDelete} className="p-1.5 rounded-lg hover:bg-rose-500/10 text-muted-foreground hover:text-rose-500 transition-all"><Filter size={12} className="rotate-45" /></button>
+                    </div>
+                )}
             </div>
 
             <h4 className="text-[11px] font-black text-foreground uppercase tracking-tight mb-2 group-hover:text-primary transition-colors line-clamp-2 leading-tight relative z-10">{task.name}</h4>
